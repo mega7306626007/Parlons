@@ -76,9 +76,9 @@ fun SettingsScreen(store: Store, speechDebug: String = "", onBack: () -> Unit) {
         }
         Text(lang.t("Text size", "Ukubwa wa maandishi", "Text size"), fontWeight = FontWeight.Bold)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Chip(lang.t("Small", "Ndogo", "Small"), store.textScale == 0.85f) { store.setTextScale(0.85f) }
-            Chip(lang.t("Default", "Kawaida", "Default"), store.textScale == 1f) { store.setTextScale(1f) }
-            Chip(lang.t("Large", "Kubwa", "Large"), store.textScale == 1.15f) { store.setTextScale(1.15f) }
+            Chip(lang.t("Small", "Ndogo", "Small"), store.textScale == 0.85f) { store.updateTextScale(0.85f) }
+            Chip(lang.t("Default", "Kawaida", "Default"), store.textScale == 1f) { store.updateTextScale(1f) }
+            Chip(lang.t("Large", "Kubwa", "Large"), store.textScale == 1.15f) { store.updateTextScale(1.15f) }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) { Text("Sound effects", fontWeight = FontWeight.Bold); Text("Dings + fanfare 🎉", fontSize = 13.sp, color = Color.Gray) }
@@ -147,7 +147,7 @@ fun SettingsScreen(store: Store, speechDebug: String = "", onBack: () -> Unit) {
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) { Text("Developer: show speech engine", fontWeight = FontWeight.Bold); Text("Testing only (§9.4)", fontSize = 13.sp, color = Color.Gray) }
-            Switch(checked = store.showEngine, onCheckedChange = { store.setShowEngine(it) })
+            Switch(checked = store.showEngine, onCheckedChange = { store.updateShowEngine(it) })
         }
         if (store.showEngine && speechDebug.isNotBlank()) {
             Text(speechDebug, fontSize = 13.sp, color = Color(0xFF1B7A2F))

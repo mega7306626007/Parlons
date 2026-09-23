@@ -295,9 +295,9 @@ class Store(ctx: Context) {
     // §9.4 developer flag: surface the active speech engine (testing only, off by default).
     var showEngine by mutableStateOf(sp.getBoolean("dbgEngine", false))
         private set
-    fun setShowEngine(b: Boolean) { showEngine = b; sp.edit().putBoolean("dbgEngine", b).apply() }
+    fun updateShowEngine(b: Boolean) { showEngine = b; sp.edit().putBoolean("dbgEngine", b).apply() }
     fun setSound(b: Boolean) { soundOn = b; sp.edit().putBoolean("sound", b).apply() }
-    fun setTextScale(v: Float) { textScale = v; sp.edit().putFloat("textScale", v).apply() }
+    fun updateTextScale(v: Float) { textScale = v; sp.edit().putFloat("textScale", v).apply() }
     fun setOnboarded() { onboarded = true; sp.edit().putBoolean("onboarded", true).apply() }
     fun setGoal(v: Int) { dailyGoalXp = v; sp.edit().putInt("goal", v).apply() }
     fun setReminder(on: Boolean, hour: Int) { reminderOn = on; reminderHour = hour; sp.edit().putBoolean("remOn", on).putInt("remHour", hour).apply() }
