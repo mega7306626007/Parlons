@@ -206,7 +206,7 @@ val EXTRA2_LESSONS: List<Lesson> = listOf(
         P3("Les actes parlent plus que les mots", "Actions speak louder than words", "Vitendo vina nguvu kuliko maneno", "Actions zinaongea"),
         P3("Chaque chose en son temps", "Everything in its time", "Kila jambo na wakati wake", "Kila kitu na time yake", null, null, "A2"),
         P3("La patience est une vertu", "Patience is a virtue", "Subira ni fadhila", "Subira ni key", "Matatu-queue philosophy, universal.")
-    ), "u3", culture = "Methali meet proverbes: French and Swahili wisdom rhyme because both cultures farmed, fished and raised stubborn children. Trade them freely — a Kenyan who quotes French proverbs correctly earns instant delight in Dakar, Abidjan or Lyon.")
+    ), "u3", culture = "Methali meet proverbes: French and Swahili wisdom rhyme because both cultures farmed, fished and raised stubborn children. Trade them freely — a Kenyan who quotes French proverbs correctly earns instant delight in Dakar, Abidjan or Lyon."),
     // ---------- U4 (+6 → 11) ----------
     Lesson("bank", "🏦", "À la banque", "At the bank", "Benki", listOf(
         P3("Je veux envoyer de l'argent", "I want to send money", "Ninataka kutuma pesa", "Nadai kutuma pesa", null, null, "A2", true),
@@ -433,7 +433,7 @@ val EXTRA2_LESSONS: List<Lesson> = listOf(
         P3("Petit à petit !", "Little by little!", "Haba na haba!", "Haba na haba!"),
         P3("Quel est ton rêve ?", "What is your dream?", "Ndoto yako ni ipi?", "Dream yako ni gani?"),
         P3("Mon rêve, c'est de parler couramment", "My dream is to speak fluently", "Ndoto yangu ni kuongea vizuri", "Dream yangu ni kuflow")
-    ), "u6", culture = "Why French matters for a Kenyan: Alliance Française Nairobi, degree programs in Dakar, Abidjan and Kigali, and regional bodies that work in French and English. A Kenyan who speaks real French skips a hundred queues.")
+    ), "u6", culture = "Why French matters for a Kenyan: Alliance Française Nairobi, degree programs in Dakar, Abidjan and Kigali, and regional bodies that work in French and English. A Kenyan who speaks real French skips a hundred queues."),
     Lesson("sounds", "🔊", "Les sons", "French sounds", "Matamshi", listOf(
         P3("Un bonbon blanc", "A white sweet", "Pipi nyeupe", "Sweet nyeupe", "Nasals: un/on/an. Hum them — nose does the work.", null, "A1", true),
         P3("Tu ou tout ?", "You or all?", "Wewe au yote?", "Wewe ama yote?", "Minimal pair #1: tu/tout. Ear training starts here."),
