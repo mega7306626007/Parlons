@@ -1,0 +1,22 @@
+# Local SDK path — machine-specific, never commit
+local.properties
+
+# Gradle
+.gradle/
+build/
+app/build/
+gradle/wrapper/gradle-wrapper.jar
+
+# Android Studio
+.idea/
+*.iml
+.DS_Store
+
+# Keystores — never commit signing keys
+*.jks
+*.keystore
+
+# Large user-supplied offline voice models are fetched separately (spec §9.3).
+# Uncomment to also exclude them from clones if you ever add them locally:
+# app/src/main/assets/vosk-model-fr/
+# app/src/main/assets/piper-fr/
