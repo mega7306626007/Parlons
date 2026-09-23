@@ -37,18 +37,23 @@ class NetConnectivity(ctx: Context) {
         // Live updates so the UI can react mid-session (§9.4); engine choice
         // itself stays session-pinned and never flips mid-conversation.
         runCatching { cm.registerDefaultNetworkCallback(callback) }
+        // Prime the online flag so the first isOnline() call doesn't NPE.
+        refresh()
     }
 
     /** Pinned at session start — never re-resolve mid-conversation. */
     val engineForSession: SpeechEngine by mutableStateOf(
-        if (isOnline()) SpeechEngine.SYSTEM else SpeechEngine.OFFLINE
+        try { if (isOnline()) SpeechEngine.SYSTEM else SpeechEngine.OFFLINE }
+        catch (_: SecurityException) { SpeechEngine.OFFLINE }
     )
 
     fun isOnline(): Boolean {
-        val net: Network = cm.activeNetwork ?: return false
-        val caps = cm.getNetworkCapabilities(net) ?: return false
-        return caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
-            caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        return try {
+            val net: Network = cm.activeNetwork ?: return false
+            val caps = cm.getNetworkCapabilities(net) ?: return false
+            caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) &&
+                caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED)
+        } catch (_: SecurityException) { false }
     }
 
     fun refresh() {
