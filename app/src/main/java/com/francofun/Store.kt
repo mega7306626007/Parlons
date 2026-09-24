@@ -380,8 +380,50 @@ class Store(ctx: Context) {
     fun recordSrs(key: String, correct: Boolean, fuzzy: Double = 1.0) {        rollDay()
         val prev = srs[key] ?: SrsItem()
         srs[key] = scoreSrs(prev, qualityFor(correct, fuzzy))
-        if (correct) { todayReview += 1; sp.edit().putInt(dayKey("drv"), todayReview).apply() }
+        if (correct) {
+            todayReview += 1
+            // Clearing a known mistake: correct SRS grade removes it from the notebook.
+            if (mistakes.containsKey(key)) {
+                mistakes.remove(key)
+                saveMistakes()
+            }
+            sp.edit().putInt(dayKey("drv"), todayReview).apply()
+        }
         saveSrs()
+    }
+
+    // ── Mistake notebook (research: error-driven review) ──
+    /** phraseKey → times missed + the last wrong thing said. */
+    val mistakes = mutableStateMapOf<String, MistakeRecord>().apply {
+        sp.getString("mistakes", "")?.takeIf { it.isNotBlank() }?.let { raw ->
+            runCatching {
+                val o = JSONObject(raw)
+                o.keys().forEach { k -> put(k, MistakeRecord.fromJson(o.getJSONObject(k))) }
+            }
+        }
+    }
+
+    private fun saveMistakes() {
+        val o = JSONObject()
+        mistakes.forEach { (k, v) -> o.put(k, v.toJson()) }
+        sp.edit().putString("mistakes", o.toString()).apply()
+    }
+
+    /** Record a wrong answer for the notebook (deduped by phrase, count stacks). */
+    fun recordMistake(key: String, fr: String, meaning: String, tried: String = "") {
+        val prev = mistakes[key]
+        mistakes[key] = MistakeRecord(
+            fr = fr,
+            meaning = meaning,
+            count = (prev?.count ?: 0) + 1,
+            lastTried = tried.ifBlank { prev?.lastTried ?: "" }
+        )
+        saveMistakes()
+    }
+
+    fun clearMistake(key: String) {
+        mistakes.remove(key)
+        saveMistakes()
     }
 
     /**
@@ -480,12 +522,13 @@ class Store(ctx: Context) {
         xp = 0; gems = START_GEMS; hearts = MAX_HEARTS; streak = 0; lastDay = -1L; lessonsDone = 0; perfectCount = 0
         speakCorrectTotal = 0; chatMsgsTotal = 0
         todayXp = 0; todayLessons = 0; todaySpeak = 0; todayChat = 0; todayReview = 0
-        stars.clear(); badges.clear(); srs.clear()
+        stars.clear(); badges.clear(); srs.clear(); mistakes.clear()
         val e = sp.edit()
         allLessons().forEach { e.remove("stars_${it.id}") }
         // Synthetic routes (never in allLessons) must not leak stars across resets.
         e.remove("stars_marathon").remove("stars_review")
         BADGES.forEach { e.remove("badge_${it.id}") }
+        e.remove("mistakes")
         // Progress-only wipe: daily counters, quest flags, Simba records, heart clock.
         // Settings (lang/theme/goal/reminder/sound/onboarded) and custom lessons are kept.
         val keys = sp.all?.keys?.toList() ?: emptyList()

@@ -79,6 +79,10 @@ sealed interface Route {
     object Speed : Route
     object WordBank : Route
     object Onboarding : Route
+    object FreeTalk : Route
+    object Mistakes : Route
+    object Grammar : Route
+    object Challenge : Route
 }
 
 private data class TabItem(val route: Route, val icon: String, val label: String)
@@ -155,7 +159,11 @@ fun App(store: Store) {
                     onCall = { go(Route.Call) },
                     onSpeed = { go(Route.Speed) },
                     onCustom = { go(Route.Custom) },
-                    onMarathon = { go(Route.Marathon) }
+                    onMarathon = { go(Route.Marathon) },
+                    onFreeTalk = { go(Route.FreeTalk) },
+                    onMistakes = { go(Route.Mistakes) },
+                    onChallenge = { go(Route.Challenge) },
+                    onGrammar = { go(Route.Grammar) }
                 )
                 Route.Words -> WordBankScreen(store, speaker) { go(Route.Home) }
                 Route.Profile -> ProfileTab(
@@ -183,6 +191,28 @@ fun App(store: Store) {
                 Route.Speed -> SpeedScreen(store, speaker) { go(Route.Practice) }
                 Route.WordBank -> WordBankScreen(store, speaker) { go(Route.Home) }
                 Route.Review -> ReviewScreen(store, speaker) { go(Route.Practice) }
+                Route.FreeTalk -> FreeTalkScreen(store, speaker, speechEnv) { go(Route.Practice) }
+                Route.Mistakes -> MistakesScreen(store, speaker, onBack = { go(Route.Practice) }, onPracticePhrase = {
+                    val lesson = Lesson(
+                        "mistakes", "📒", "Mistakes", "From your notebook", "Makosa",
+                        store.mistakes.keys.mapNotNull { k -> ALL_PHRASES.find { it.key() == k } },
+                        "u1"
+                    )
+                    if (lesson.phrases.isNotEmpty()) go(Route.Play(lesson)) else go(Route.Practice)
+                })
+                Route.Grammar -> GrammarScreen(store) { go(Route.Practice) }
+                Route.Challenge -> {
+                    // Daily mixed challenge: 8 questions across completed lessons.
+                    val done = allLessons().filter { (store.stars[it.id] ?: 0) >= 1 }
+                    val source = done.ifEmpty { allLessons().take(3) }
+                    val mixed = Lesson(
+                        "challenge", "🎯",
+                        "Défi du jour", "Daily challenge", "Changamoto ya leo",
+                        source.shuffled().flatMap { it.phrases.shuffled().take(2) }.distinctBy { it.key() }.take(8),
+                        "u1"
+                    )
+                    LessonScreen(store, speaker, speechEnv, mixed) { go(Route.Practice) }
+                }
             }
             }
         }

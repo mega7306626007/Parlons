@@ -102,6 +102,25 @@ fun intervalLabel(days: Int): String = when (days) {
 fun retentionScore(item: SrsItem?): Float =
     if (item == null) 0f else (item.box.coerceIn(1, 5) - 1) / 4f
 
+/** One entry in the mistake notebook (persisted via Store). */
+data class MistakeRecord(
+    val fr: String,
+    val meaning: String,
+    val count: Int = 1,
+    val lastTried: String = ""
+) {
+    fun toJson(): JSONObject = JSONObject()
+        .put("fr", fr).put("m", meaning).put("c", count).put("t", lastTried)
+    companion object {
+        fun fromJson(o: JSONObject): MistakeRecord = MistakeRecord(
+            o.optString("fr"),
+            o.optString("m"),
+            o.optInt("c", 1),
+            o.optString("t")
+        )
+    }
+}
+
 /** CEFR rank for the §6.4 difficulty gate. Unknown tags sort as hardest. */
 fun levelRank(level: String): Int = when (level.uppercase()) {
     "A1" -> 0

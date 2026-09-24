@@ -548,9 +548,14 @@ fun PracticeTab(
     onCall: () -> Unit,
     onSpeed: () -> Unit,
     onCustom: () -> Unit,
-    onMarathon: () -> Unit
+    onMarathon: () -> Unit,
+    onFreeTalk: () -> Unit = {},
+    onMistakes: () -> Unit = {},
+    onChallenge: () -> Unit = {},
+    onGrammar: () -> Unit = {}
 ) {
     val dueN = allDueCount(store.srs)
+    val mistakeN = store.mistakes.size
     AppBackground(tint = VioletSoft) {
         LazyColumn(
             Modifier.fillMaxSize(),
@@ -560,6 +565,18 @@ fun PracticeTab(
             item {
                 Text("Practice", style = T.screenTitle, color = Ink)
                 Text("Keep skills sharp — review, speak, challenge yourself", style = T.caption, color = InkSoft)
+            }
+            item {
+                HeroCard(color = Gold, onClick = onChallenge) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("🎯", fontSize = 32.sp)
+                        Spacer(Modifier.padding(Sp.sm))
+                        Column(Modifier.weight(1f)) {
+                            Text("Daily challenge", style = T.bodySemi, color = Ink)
+                            Text("8 mixed questions from what you've learned", style = T.caption, color = InkSoft)
+                        }
+                    }
+                }
             }
             item {
                 HeroCard(color = if (dueN > 0) Gold else Cobalt, onClick = onReview) {
@@ -578,6 +595,20 @@ fun PracticeTab(
                             )
                         }
                     }
+                }
+            }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), modifier = Modifier.fillMaxWidth()) {
+                    PracticeTile("🎤", "Free Talk", Violet, Modifier.weight(1f), onFreeTalk)
+                    PracticeTile("📒", "Mistakes", Coral, Modifier.weight(1f), onMistakes)
+                }
+            }
+            if (mistakeN > 0) {
+                item {
+                    Text(
+                        "📒 $mistakeN phrase${if (mistakeN == 1) "" else "s"} in your mistake notebook",
+                        style = T.caption, color = Coral
+                    )
                 }
             }
             item {
@@ -603,6 +634,9 @@ fun PracticeTab(
                     PracticeTile("✨", "Custom lesson", Violet, Modifier.weight(1f), onCustom)
                     PracticeTile("🏃", "Marathon", Emerald, Modifier.weight(1f), onMarathon)
                 }
+            }
+            item {
+                PracticeTile("📐", "Grammar library", Cobalt, Modifier.fillMaxWidth(), onGrammar)
             }
             item {
                 PracticeTile("🔗", "12-scenario chain", Gold, Modifier.fillMaxWidth(), onChainChat)

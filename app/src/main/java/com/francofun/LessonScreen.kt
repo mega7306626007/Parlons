@@ -141,6 +141,19 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
         // SRS scoring — except drills with ad-hoc keys ("je suis", "tu/tout"),
         // which would corrupt per-word mastery if recorded.
         if (q.type != QType.CONJUGATE && q.type != QType.MINIMAL_PAIR) store.recordSrs(q.phrase.key(), ok, fuzzy)
+        // Mistake notebook: capture misses for focused follow-up (except ad-hoc drills).
+        if (!ok && q.type != QType.CONJUGATE && q.type != QType.MINIMAL_PAIR) {
+            store.recordMistake(
+                key = q.phrase.key(),
+                fr = q.phrase.fr,
+                meaning = q.phrase.meaning(lang),
+                tried = when (q.type) {
+                    QType.TYPE, QType.CONJUGATE, QType.DICTATION -> typed
+                    QType.SPEAK -> heard
+                    else -> chosen ?: ""
+                }
+            )
+        }
         if (q.type == QType.SPEAK && ok) speakOk++
     }
 
