@@ -1,22 +1,22 @@
 package com.francofun
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,65 +28,88 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.francofun.R
-import java.time.LocalDate
+
+/* ═══════════ HOME TAB — open layout, one primary action ═══════════ */
 
 @Composable
-fun HomeScreen(
-    store: Store, onLesson: (Lesson) -> Unit, onChat: () -> Unit, onCall: () -> Unit,
-    onSettings: () -> Unit, onStats: () -> Unit, onReview: () -> Unit, onCustom: () -> Unit,
-    onSpeed: () -> Unit, onWordBank: () -> Unit, onMarathon: () -> Unit = {}, onChainChat: () -> Unit = {}
+fun HomeTab(
+    store: Store,
+    onLesson: (Lesson) -> Unit,
+    onChat: () -> Unit,
+    onLearn: () -> Unit,
+    onPractice: () -> Unit,
+    onWords: () -> Unit,
+    onProfile: () -> Unit
 ) {
     val lang = store.helpLang
     val dueN = allDueCount(store.srs)
     val (into, need) = xpIntoLevel(store.xp)
-    PhotoBg(R.drawable.bg_home) {
-    LazyColumn(
-        Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(Sp.xxl),
-        verticalArrangement = Arrangement.spacedBy(Sp.lg)
-    ) {
-        item { HeaderRow(store, onStats, onSettings) }
-        item { Greeting(lang) }
-        item { ProgressCard(store, into, need) }
-        item { LangChips(store) }
-        if (dueN > 0) item { ReviewCard(dueN, onReview) }
-        item { HeroCta(lang, onChat, onCall, onSpeed, onCustom) }
-        item { DailyQuestsCard(store) }
-        item { WordBankRow(store, onWordBank) }
-        if (customLessonsCache.isNotEmpty()) {
-            item { CustomLessonsRow(store, onLesson) }
-        }
-        UNITS.forEach { u ->
-            val locked = !store.unitUnlocked(u.id)
-            item { UnitHeader(u, locked) }
-            if (locked) item { LockMessage() }
-            val ls = u.lessonIds.mapNotNull { lessonById(it) }
-            items(ls, key = { it.id }) { l ->
-                LessonCard(l, lang, store.stars[l.id] ?: 0, enabled = !locked) { onLesson(l) }
+    AppBackground(tint = CobaltSoft) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(Sp.xxl),
+            verticalArrangement = Arrangement.spacedBy(Sp.lg)
+        ) {
+            item { HeaderRow(store, onProfile) }
+            item { Greeting(lang) }
+            item { ProgressCard(store, into, need) }
+            item { LangChips(store) }
+            item {
+                HeroCard(color = Cobalt, onClick = onChat) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Mascot(MascotMood.EXCITED, size = 72.dp)
+                        Spacer(Modifier.padding(Sp.sm))
+                        Column(Modifier.weight(1f)) {
+                            Text("Chat with Simba 🦁", style = T.section, color = White)
+                            Text(
+                                "Offline conversations by text or voice — he reacts and suggests better phrasings.",
+                                style = T.secondary, color = White.copy(alpha = 0.9f)
+                            )
+                        }
+                    }
+                }
             }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), modifier = Modifier.fillMaxWidth()) {
+                    QuickAction("📚", "Learn path", Cobalt, Modifier.weight(1f)) { onLearn() }
+                    QuickAction("💪", "Practice", Violet, Modifier.weight(1f)) { onPractice() }
+                }
+            }
+            if (dueN > 0) item { ReviewBanner(dueN, onPractice) }
+            item { DailyQuestsCard(store) }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), modifier = Modifier.fillMaxWidth()) {
+                    QuickAction("📖", "Word bank", Turquoise, Modifier.weight(1f)) { onWords() }
+                    QuickAction("👤", "Profile", Gold, Modifier.weight(1f)) { onProfile() }
+                }
+            }
+            item { ContinueCard(store, lang, onLearn) }
         }
-        if (store.unitUnlocked("u6")) {
-            item { CapstoneCard(onMarathon, onChainChat) }
-        }
-        item { BadgesSection(store, onStats) }
-    }
     }
 }
 
 @Composable
-private fun HeaderRow(store: Store, onStats: () -> Unit, onSettings: () -> Unit) {
+private fun HeaderRow(store: Store, onProfile: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text("Parlons", style = T.screenTitle, color = Blue, modifier = Modifier.weight(1f))
+        Text("Parlons", style = T.screenTitle, color = Cobalt, modifier = Modifier.weight(1f))
         BadgeCount("🔥", store.streak)
         BadgeCount("⭐", store.xp)
         BadgeCount("💎", store.gems)
-        BadgeCount("❤️", store.hearts)
-        Text("📊", fontSize = 20.sp, modifier = Modifier.clickable(onClick = onStats).padding(start = 4.dp))
-        Text("⚙️", fontSize = 20.sp, modifier = Modifier.clickable(onClick = onSettings).padding(start = 4.dp))
+        Text(
+            "👤", fontSize = 20.sp,
+            modifier = Modifier
+                .clip(Rad.md)
+                .clickable(onClick = onProfile)
+                .padding(6.dp)
+                .semantics { contentDescription = "Profile"; role = Role.Button }
+        )
     }
 }
 
@@ -98,7 +121,7 @@ private fun Greeting(lang: HelpLang) {
             HelpLang.SWAHILI -> "Bonjour! Uko tayari kuongea Kifaransa leo?"
             HelpLang.SHENG -> "Bonjour msee! Uko ready tuongee French leo?"
         },
-        style = T.secondary
+        style = T.body, color = InkSoft
     )
 }
 
@@ -109,121 +132,263 @@ private fun ProgressCard(store: Store, into: Int, need: Int) {
             ProgressRing(store.todayXp.toFloat() / store.dailyGoalXp.coerceAtLeast(1).toFloat())
             Spacer(Modifier.padding(Sp.md))
             Column(Modifier.weight(1f)) {
-                Text("Level ${levelForXp(store.xp)} · ${levelTitle(levelForXp(store.xp))}", style = T.bodySemi)
+                Text("Level ${levelForXp(store.xp)} · ${levelTitle(levelForXp(store.xp))}", style = T.bodySemi, color = Ink)
                 LinearProgressIndicator(
                     progress = { into / need.toFloat() },
-                    Modifier.fillMaxWidth().height(6.dp).clip(Rad.md),
-                    color = Blue
+                    Modifier.fillMaxWidth().height(6.dp).clip(Rad.pill),
+                    color = Cobalt
                 )
-                Text("Today ${store.todayXp}/${store.dailyGoalXp} XP · ${store.todayLessons} lessons", style = T.caption)
+                Text(
+                    "Today ${store.todayXp}/${store.dailyGoalXp} XP · ${store.todayLessons} lessons",
+                    style = T.caption, color = InkSoft
+                )
             }
         }
     }
 }
 
 @Composable
-private fun ReviewCard(dueN: Int, onReview: () -> Unit) {
-    Card(elevation = 1.dp) {
+private fun ReviewBanner(dueN: Int, onPractice: () -> Unit) {
+    HeroCard(color = Gold, onClick = onPractice) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("🔁 Review $dueN due words", style = T.bodySemi, modifier = Modifier.weight(1f))
-            Text("Start →", color = Blue, fontWeight = FontWeight.Bold, modifier = Modifier.clickable(onClick = onReview))
-        }
-    }
-}
-
-@Composable
-private fun HeroCta(lang: HelpLang, onChat: () -> Unit, onCall: () -> Unit, onSpeed: () -> Unit, onCustom: () -> Unit) {
-    Card(
-        modifier = Modifier.clickable(onClick = onChat),
-        elevation = 2.dp
-    ) {
-        Column(Modifier.padding(Sp.lg)) {
-            Text("Chat with Simba 🦁", style = T.screenTitle, color = Color.White)
+            Text("🔁", fontSize = 28.sp)
             Spacer(Modifier.padding(Sp.sm))
-            Text(
-                "Scripted conversations by text or voice — 100% offline. He reacts and offers better phrasings.",
-                style = T.secondary, color = Color.White.copy(alpha = 0.9f)
-            )
-            Spacer(Modifier.padding(Sp.md))
-            Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm)) {
-                TonalChip("📞", "Voice call", onCall)
-                TonalChip("⚡", "Speed", onSpeed)
-                TonalChip("✨", "Custom", onCustom)
+            Column(Modifier.weight(1f)) {
+                Text("Review $dueN due words", style = T.bodySemi, color = Ink)
+                Text("Spaced repetition keeps them fresh", style = T.caption, color = InkSoft)
+            }
+            Text("→", style = T.section, color = Ink)
+        }
+    }
+}
+
+@Composable
+private fun QuickAction(icon: String, label: String, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Column(
+        modifier
+            .clip(Rad.xl)
+            .background(Surface)
+            .border(1.dp, Border, Rad.xl)
+            .clickable(onClick = onClick)
+            .padding(Sp.md)
+            .semantics { contentDescription = label; role = Role.Button },
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Box(
+            Modifier.size(44.dp).clip(Rad.md).background(color.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center
+        ) { Text(icon, fontSize = 22.sp) }
+        Spacer(Modifier.padding(Sp.xs))
+        Text(label, style = T.label, color = Ink, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+    }
+}
+
+@Composable
+private fun ContinueCard(store: Store, lang: HelpLang, onLearn: () -> Unit) {
+    val next = allLessons()
+        .filter { store.stars[it.id] ?: 0 < 3 && store.unitUnlocked(it.unitId) }
+        .minByOrNull { UNITS.indexOfFirst { u -> u.id == it.unitId } * 100 + LESSONS.indexOfFirst { l -> l.id == it.id } }
+    if (next != null) {
+        HeroCard(color = Violet, onClick = { onLearn() }) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(next.emoji, fontSize = 36.sp)
+                Spacer(Modifier.padding(Sp.sm))
+                Column(Modifier.weight(1f)) {
+                    Text("Continue: ${next.fr}", style = T.bodySemi, color = White)
+                    Text(
+                        if (lang == HelpLang.ENGLISH) next.en else next.sw,
+                        style = T.caption, color = White.copy(alpha = 0.85f)
+                    )
+                }
+                Text("→", style = T.section, color = White)
             }
         }
     }
 }
 
-@Composable
-private fun TonalChip(icon: String, text: String, onClick: () -> Unit) {
-    Box(
-        Modifier.clip(Rad.pill).background(Blue.copy(alpha = 0.15f))
-            .clickable(onClick = onClick).padding(horizontal = Sp.md, vertical = Sp.sm),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(icon, fontSize = 16.sp)
-            Text(text, color = Blue, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-        }
-    }
-}
+/* ═══════════ LEARN TAB — unit path ═══════════ */
 
 @Composable
-private fun WordBankRow(store: Store, onWordBank: () -> Unit) {
-    Card {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("📖 Word bank", style = T.bodySemi, modifier = Modifier.weight(1f))
-            Text("${store.wordsLearnedCount()} mastered", style = T.caption)
-            Text("Open →", color = Blue, fontWeight = FontWeight.Bold, modifier = Modifier.clickable(onClick = onWordBank))
+fun LearnTab(store: Store, onLesson: (Lesson) -> Unit) {
+    val lang = store.helpLang
+    AppBackground {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(Sp.xxl),
+            verticalArrangement = Arrangement.spacedBy(Sp.sm)
+        ) {
+            item {
+                Text("Learning path", style = T.screenTitle, color = Ink)
+                Text("6 units · 65 lessons · finish earlier units to unlock", style = T.caption, color = InkSoft)
+                Spacer(Modifier.padding(Sp.xs))
+            }
+            UNITS.forEach { u ->
+                val locked = !store.unitUnlocked(u.id)
+                item { UnitHeader(u, locked) }
+                if (locked) item { LockMessage() }
+                val ls = u.lessonIds.mapNotNull { lessonById(it) }
+                items(ls, key = { it.id }) { l ->
+                    LessonCard(l, lang, store.stars[l.id] ?: 0, enabled = !locked) { onLesson(l) }
+                }
+            }
+            if (customLessonsCache.isNotEmpty()) {
+                item { SectionHeader("✨ Custom lessons") }
+                items(customLessonsCache, key = { it.id }) { l ->
+                    CustomLessonRow(l) { onLesson(l) }
+                }
+            }
+            if (store.unitUnlocked("u6")) {
+                item { SectionHeader("🌉 Capstone") }
+                item { CapstoneHint() }
+            }
         }
     }
 }
 
 @Composable
 private fun UnitHeader(u: StudyUnit, locked: Boolean) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = Sp.sm)) {
         Text(if (locked) "🔒" else u.emoji, fontSize = 20.sp)
         Spacer(Modifier.padding(Sp.sm))
         Text(u.fr, style = T.section, color = if (locked) InkMuted else Ink)
+        Spacer(Modifier.padding(Sp.xs))
+        Text(u.en, style = T.caption, color = InkSoft)
     }
 }
 
 @Composable
 private fun LockMessage() {
-    Text("Finish every lesson in earlier units to unlock the capstone 🌉", style = T.caption)
+    Text(
+        "Finish every lesson in earlier units to unlock the capstone 🌉",
+        style = T.caption, color = InkMuted,
+        modifier = Modifier.padding(bottom = Sp.xs)
+    )
 }
 
 @Composable
 private fun LessonCard(l: Lesson, lang: HelpLang, stars: Int, enabled: Boolean, onClick: () -> Unit) {
     Card(
-        modifier = Modifier.clickable(enabled = enabled, onClick = onClick),
-        elevation = if (enabled) 0.5.dp else 0.dp
+        modifier = Modifier
+            .clickable(enabled = enabled, onClick = onClick)
+            .semantics { contentDescription = l.fr; role = Role.Button },
+        elevation = if (enabled) 1.dp else 0.dp
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(Sp.md)) {
-            Box(Modifier.size(44.dp).clip(CircleShape).background(BlueLight), contentAlignment = Alignment.Center) {
-                Text(l.emoji, fontSize = 22.sp)
-            }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(44.dp).clip(Rad.md).background(if (enabled) CobaltSoft else Border),
+                contentAlignment = Alignment.Center
+            ) { Text(l.emoji, fontSize = 22.sp) }
             Spacer(Modifier.padding(Sp.md))
             Column(modifier = Modifier.weight(1f)) {
-                Text(l.fr, style = T.bodySemi)
-                Text(if (lang == HelpLang.ENGLISH) l.en else l.sw, style = T.caption)
+                Text(l.fr, style = T.bodySemi, color = if (enabled) Ink else InkMuted)
+                Text(
+                    if (lang == HelpLang.ENGLISH) l.en else l.sw,
+                    style = T.caption, color = InkSoft
+                )
             }
-            Text("★".repeat(stars) + "☆".repeat(3 - stars), color = Gold, fontSize = 16.sp)
+            Text(
+                "★".repeat(stars) + "☆".repeat(3 - stars),
+                color = Gold, fontSize = 16.sp
+            )
         }
     }
 }
 
 @Composable
-private fun CustomLessonsRow(store: Store, onLesson: (Lesson) -> Unit) {
-    SectionHeader("✨ Custom lessons")
-    customLessonsCache.forEach { l ->
-        Card {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(Sp.md).clickable(onClick = { onLesson(l) })) {
-                Text("📚", fontSize = 20.sp)
-                Spacer(Modifier.padding(Sp.sm))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(l.fr, style = T.bodySemi)
-                    Text("${l.phrases.size} phrases", style = T.caption)
+private fun CustomLessonRow(l: Lesson, onClick: () -> Unit) {
+    Card(modifier = Modifier.clickable(onClick = onClick)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("📚", fontSize = 20.sp)
+            Spacer(Modifier.padding(Sp.sm))
+            Column(Modifier.weight(1f)) {
+                Text(l.fr, style = T.bodySemi, color = Ink)
+                Text("${l.phrases.size} phrases", style = T.caption, color = InkSoft)
+            }
+        }
+    }
+}
+
+@Composable
+private fun CapstoneHint() {
+    Text(
+        "Marathon review of your hardest words, or all twelve Simba scenarios back-to-back.",
+        style = T.secondary, color = InkSoft
+    )
+}
+
+/* ═══════════ PRACTICE TAB ═══════════ */
+
+@Composable
+fun PracticeTab(
+    store: Store,
+    onReview: () -> Unit,
+    onChat: () -> Unit,
+    onChainChat: () -> Unit,
+    onCall: () -> Unit,
+    onSpeed: () -> Unit,
+    onCustom: () -> Unit,
+    onMarathon: () -> Unit
+) {
+    val dueN = allDueCount(store.srs)
+    AppBackground(tint = VioletSoft) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(Sp.xxl),
+            verticalArrangement = Arrangement.spacedBy(Sp.md)
+        ) {
+            item {
+                Text("Practice", style = T.screenTitle, color = Ink)
+                Text("Keep skills sharp — review, speak, challenge yourself", style = T.caption, color = InkSoft)
+            }
+            item {
+                HeroCard(color = if (dueN > 0) Gold else Cobalt, onClick = onReview) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("🔁", fontSize = 32.sp)
+                        Spacer(Modifier.padding(Sp.sm))
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                if (dueN > 0) "$dueN words due for review" else "Review when words come due",
+                                style = T.bodySemi, color = if (dueN > 0) Ink else White
+                            )
+                            Text(
+                                "Spaced repetition (SRS)",
+                                style = T.caption,
+                                color = if (dueN > 0) InkSoft else White.copy(alpha = 0.85f)
+                            )
+                        }
+                    }
+                }
+            }
+            item {
+                HeroCard(color = Cobalt, onClick = onChat) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Mascot(MascotMood.LISTENING, size = 56.dp)
+                        Spacer(Modifier.padding(Sp.sm))
+                        Column(Modifier.weight(1f)) {
+                            Text("Chat with Simba", style = T.bodySemi, color = White)
+                            Text("Scripted offline conversation", style = T.caption, color = White.copy(alpha = 0.85f))
+                        }
+                    }
+                }
+            }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), modifier = Modifier.fillMaxWidth()) {
+                    PracticeTile("📞", "Voice call", Turquoise, Modifier.weight(1f), onCall)
+                    PracticeTile("⚡", "Speed round", Coral, Modifier.weight(1f), onSpeed)
+                }
+            }
+            item {
+                Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), modifier = Modifier.fillMaxWidth()) {
+                    PracticeTile("✨", "Custom lesson", Violet, Modifier.weight(1f), onCustom)
+                    PracticeTile("🏃", "Marathon", Emerald, Modifier.weight(1f), onMarathon)
+                }
+            }
+            item {
+                PracticeTile("🔗", "12-scenario chain", Gold, Modifier.fillMaxWidth(), onChainChat)
+            }
+            if (store.unitUnlocked("u6")) {
+                item {
+                    PracticeTile("🌉", "Capstone challenges", Ink, Modifier.fillMaxWidth()) { onMarathon() }
                 }
             }
         }
@@ -231,75 +396,140 @@ private fun CustomLessonsRow(store: Store, onLesson: (Lesson) -> Unit) {
 }
 
 @Composable
-private fun CapstoneCard(onMarathon: () -> Unit, onChainChat: () -> Unit) {
-    Card(
-        modifier = Modifier.clickable(onClick = onMarathon),
-        elevation = 2.dp
+private fun PracticeTile(icon: String, label: String, color: Color, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Row(
+        modifier
+            .clip(Rad.xl)
+            .background(Surface)
+            .border(1.dp, Border, Rad.xl)
+            .clickable(onClick = onClick)
+            .padding(Sp.md)
+            .semantics { contentDescription = label; role = Role.Button },
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Column(Modifier.padding(Sp.lg)) {
-            Text("🌉 Capstone: no training wheels", style = T.screenTitle, color = Color.White)
-            Spacer(Modifier.padding(Sp.sm))
-            Text("Marathon review of your hardest words, or all twelve Simba scenarios back-to-back.", style = T.secondary, color = Color.White.copy(alpha = 0.9f))
-            Spacer(Modifier.padding(Sp.md))
-            Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm)) {
-                TonalChip("🏃", "Marathon", onMarathon)
-                TonalChip("🔗", "12-scenario chain", onChainChat)
+        Box(
+            Modifier.size(40.dp).clip(Rad.md).background(color.copy(alpha = 0.15f)),
+            contentAlignment = Alignment.Center
+        ) { Text(icon, fontSize = 20.sp) }
+        Spacer(Modifier.padding(Sp.sm))
+        Text(label, style = T.bodySemi, color = Ink, modifier = Modifier.weight(1f))
+        Text("→", color = InkMuted)
+    }
+}
+
+/* ═══════════ PROFILE TAB ═══════════ */
+
+@Composable
+fun ProfileTab(store: Store, onStats: () -> Unit, onSettings: () -> Unit) {
+    val (into, need) = xpIntoLevel(store.xp)
+    AppBackground(tint = GoldSoft) {
+        LazyColumn(
+            Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(Sp.xxl),
+            verticalArrangement = Arrangement.spacedBy(Sp.md)
+        ) {
+            item {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Mascot(MascotMood.HAPPY, size = 88.dp)
+                    Spacer(Modifier.padding(Sp.sm))
+                    Column {
+                        Text("Your profile", style = T.screenTitle, color = Ink)
+                        Text(
+                            "Level ${levelForXp(store.xp)} · ${levelTitle(levelForXp(store.xp))}",
+                            style = T.secondary, color = InkSoft
+                        )
+                    }
+                }
+            }
+            item {
+                Card {
+                    Column(verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                            ProfileStat("🔥", "${store.streak}", "streak")
+                            ProfileStat("⭐", "${store.xp}", "XP")
+                            ProfileStat("💎", "${store.gems}", "gems")
+                            ProfileStat("❤️", "${store.hearts}", "hearts")
+                        }
+                        Divider()
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                            ProfileStat("🏅", "${store.badges.size}/${BADGES.size}", "badges")
+                            ProfileStat("📖", "${store.lessonsDone}", "lessons")
+                            ProfileStat("🗣", "${store.wordsLearnedCount()}", "words")
+                            ProfileStat("📜", "${store.srs.size}", "in SRS")
+                        }
+                    }
+                }
+            }
+            item {
+                Card {
+                    Column {
+                        Text("Level progress", style = T.bodySemi, color = Ink)
+                        Spacer(Modifier.padding(Sp.xs))
+                        LinearProgressIndicator(
+                            progress = { into / need.toFloat() },
+                            Modifier.fillMaxWidth().height(8.dp).clip(Rad.pill),
+                            color = Cobalt
+                        )
+                        Text(
+                            "$into / $need XP to next level · goal ${store.dailyGoalXp} XP/day",
+                            style = T.caption, color = InkSoft,
+                            modifier = Modifier.padding(top = Sp.xs)
+                        )
+                    }
+                }
+            }
+            item {
+                PracticeTile("📊", "Detailed stats", Cobalt, Modifier.fillMaxWidth(), onStats)
+            }
+            item {
+                PracticeTile("⚙️", "Settings", InkSoft, Modifier.fillMaxWidth(), onSettings)
+            }
+            item {
+                Text(
+                    "Parlons works 100% offline · no account · no API keys",
+                    style = T.caption, color = InkMuted,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth().padding(top = Sp.sm)
+                )
             }
         }
     }
 }
 
 @Composable
+private fun ProfileStat(icon: String, value: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(icon, fontSize = 20.sp)
+        Text(value, style = T.stat, color = Ink)
+        Text(label, style = T.caption, color = InkSoft)
+    }
+}
+
+/* ═══════════ shared bits used by Learn ═══════════ */
+
+@Composable
 private fun DailyQuestsCard(store: Store) {
     Card {
-        Column(Modifier.padding(Sp.md)) {
+        Column {
             SectionHeader("📜 Daily quests")
             DAILY_QUESTS.forEach { q ->
                 val got = store.questClaimed(q.id)
                 val p = questProgress(q.id, store.todayXp, store.todayLessons, store.todaySpeak, store.todayChat, store.todayReview)
                 val done = p >= q.target
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(horizontal = Sp.md, vertical = Sp.xxs)) {
                     Text(q.emoji, fontSize = 18.sp)
                     Spacer(Modifier.padding(Sp.sm))
                     Text(
                         if (store.helpLang == HelpLang.ENGLISH) q.en else q.sw,
-                        style = T.body,
+                        style = T.body, color = Ink,
                         modifier = Modifier.weight(1f)
                     )
                     Text(
                         if (got) "✓" else "${p.coerceAtMost(q.target)}/${q.target}",
                         style = T.caption,
-                        color = if (done) Green else InkMuted
+                        color = if (done) Emerald else InkMuted
                     )
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun BadgesSection(store: Store, onStats: () -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    Card {
-        Column {
-            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(Sp.md).clickable { expanded = !expanded }) {
-                Text("🏅 Badges (${store.badges.size}/${BADGES.size})", style = T.bodySemi, modifier = Modifier.weight(1f))
-                Text(if (expanded) "▲" else "▼", color = InkMuted)
-            }
-            if (expanded) {
-                Spacer(Modifier.padding(Sp.sm))
-                BADGES.forEach { b ->
-                    val got = store.badges[b.id] == true
-                    Row(Modifier.fillMaxWidth().padding(horizontal = Sp.md, vertical = Sp.xs)) {
-                        Text(if (got) b.emoji else "🔒", fontSize = 22.sp)
-                        Spacer(Modifier.padding(Sp.sm))
-                        Column(Modifier.weight(1f)) {
-                            Text(if (got) b.fr else "???", style = T.bodySemi)
-                            Text(b.desc, style = T.caption)
-                        }
-                    }
-                }
-                Spacer(Modifier.padding(Sp.sm))
             }
         }
     }

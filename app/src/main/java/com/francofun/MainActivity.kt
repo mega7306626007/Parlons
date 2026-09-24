@@ -8,14 +8,17 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.material3.LinearProgressIndicator
@@ -35,6 +38,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -47,7 +54,6 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val store = Store(applicationContext)
         setContent {
-            // §8: follow the system theme by default; manual override from Settings.
             val systemDark = isSystemInDarkTheme()
             ParlonsTheme(dark = if (store.followSystemTheme) systemDark else store.darkMode) { App(store) }
         }
@@ -55,7 +61,13 @@ class MainActivity : ComponentActivity() {
 }
 
 sealed interface Route {
-    object Home : Route
+    sealed interface Tab : Route
+    object Home : Tab
+    object Learn : Tab
+    object Practice : Tab
+    object Words : Tab
+    object Profile : Tab
+
     data class Play(val lesson: Lesson) : Route
     data class Chat(val chain: Boolean = false) : Route
     object Call : Route
@@ -69,11 +81,20 @@ sealed interface Route {
     object Onboarding : Route
 }
 
+private data class TabItem(val route: Route, val icon: String, val label: String)
+
+private val TABS = listOf(
+    TabItem(Route.Home, "🏠", "Home"),
+    TabItem(Route.Learn, "📚", "Learn"),
+    TabItem(Route.Practice, "💪", "Practice"),
+    TabItem(Route.Words, "📖", "Words"),
+    TabItem(Route.Profile, "👤", "Profile")
+)
+
 @Composable
 fun App(store: Store) {
     val ctx = LocalContext.current
     val speaker = remember { Speaker(ctx) }
-    // Session-pinned speech engines (§9.4): resolved once, never mid-conversation.
     val net = remember { NetConnectivity(ctx) }
     val vosk = remember { VoskEngine(ctx) }
     val piper = remember { PiperTts(ctx) }
@@ -85,7 +106,6 @@ fun App(store: Store) {
         speaker.preferOffline = speechEnv.preferOffline
         onDispose { speaker.shutdown() }
     }
-    // One-time offline-voice setup (§9.4). Skipped when the APK ships no models.
     var setupDone by remember {
         mutableStateOf(!ModelInstaller.bundledModelsPresent(ctx) || ModelInstaller.modelsReady(ctx))
     }
@@ -94,66 +114,122 @@ fun App(store: Store) {
         return
     }
     var route by remember { mutableStateOf<Route>(if (store.onboarded) Route.Home else Route.Onboarding) }
-    BackHandler(enabled = route != Route.Home && route != Route.Onboarding) { route = Route.Home }
+    var lastTab by remember { mutableStateOf<Route>(Route.Home) }
+    fun go(r: Route) {
+        if (r is Route.Tab) lastTab = r
+        route = r
+    }
+    BackHandler(enabled = route != Route.Home && route != Route.Onboarding) {
+        route = if (route is Route.Tab) Route.Home else lastTab
+    }
 
-    // §8: in-app text size scales fonts only (dp layout untouched).
     val baseDensity = LocalDensity.current
     val scaled = Density(baseDensity.density, fontScale = baseDensity.fontScale * store.textScale)
-    // §Phase 10: short route crossfade; honors system reduce-motion.
     val motionMs = if (animationsOff(ctx)) 0 else 220
+    val onTab = route is Route.Tab
     CompositionLocalProvider(LocalDensity provides scaled) {
-    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).systemBarsPadding()) {
-        Crossfade(targetState = route, animationSpec = tween(motionMs), label = "route") { r ->
-        when (r) {
-            Route.Onboarding -> OnboardingScreen(store) { route = Route.Home }
-            Route.Home -> HomeScreen(
-                store,
-                onLesson = { route = Route.Play(it) },
-                onChat = { route = Route.Chat() },
-                onChainChat = { route = Route.Chat(chain = true) },
-                onMarathon = { route = Route.Marathon },
-                onCall = { route = Route.Call },
-                onSettings = { route = Route.Settings },
-                onStats = { route = Route.Stats },
-                onReview = { route = Route.Review },
-                onCustom = { route = Route.Custom },
-                onSpeed = { route = Route.Speed },
-                onWordBank = { route = Route.WordBank }
-            )
-            is Route.Play -> LessonScreen(store, speaker, speechEnv, r.lesson) { route = Route.Home }
-            is Route.Chat -> ChatScreen(store, speaker, speechEnv, chain = r.chain, onBack = { route = Route.Home }, onSettings = { route = Route.Settings }, onCall = { route = Route.Call })
-            Route.Marathon -> {
-                val hard = marathonPhrases(allLessons(), store.srs, maxLevel = store.levelCeiling())
-                val lesson = Lesson("marathon", "🏃", "Marathon", "Hardest words", "Maneno magumu", hard, "u6")
-                LessonScreen(store, speaker, speechEnv, lesson) { route = Route.Home }
+    Column(
+        Modifier.fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .systemBarsPadding()
+    ) {
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+            Crossfade(targetState = route, animationSpec = tween(motionMs), label = "route") { r ->
+            when (r) {
+                Route.Onboarding -> OnboardingScreen(store) { go(Route.Home) }
+                Route.Home -> HomeTab(
+                    store,
+                    onLesson = { go(Route.Play(it)) },
+                    onChat = { go(Route.Chat()) },
+                    onLearn = { go(Route.Learn) },
+                    onPractice = { go(Route.Practice) },
+                    onWords = { go(Route.Words) },
+                    onProfile = { go(Route.Profile) }
+                )
+                Route.Learn -> LearnTab(store) { go(Route.Play(it)) }
+                Route.Practice -> PracticeTab(
+                    store,
+                    onReview = { go(Route.Review) },
+                    onChat = { go(Route.Chat()) },
+                    onChainChat = { go(Route.Chat(chain = true)) },
+                    onCall = { go(Route.Call) },
+                    onSpeed = { go(Route.Speed) },
+                    onCustom = { go(Route.Custom) },
+                    onMarathon = { go(Route.Marathon) }
+                )
+                Route.Words -> WordBankScreen(store, speaker) { go(Route.Home) }
+                Route.Profile -> ProfileTab(
+                    store,
+                    onStats = { go(Route.Stats) },
+                    onSettings = { go(Route.Settings) }
+                )
+                is Route.Play -> LessonScreen(store, speaker, speechEnv, r.lesson) { go(Route.Learn) }
+                is Route.Chat -> ChatScreen(store, speaker, speechEnv, chain = r.chain, onBack = { go(Route.Practice) }, onSettings = { go(Route.Settings) }, onCall = { go(Route.Call) })
+                Route.Marathon -> {
+                    val hard = marathonPhrases(allLessons(), store.srs, maxLevel = store.levelCeiling())
+                    val lesson = Lesson("marathon", "🏃", "Marathon", "Hardest words", "Maneno magumu", hard, "u6")
+                    LessonScreen(store, speaker, speechEnv, lesson) { go(Route.Practice) }
+                }
+                Route.Call -> CallScreen(store, speaker, speechEnv) { go(Route.Practice) }
+                Route.Settings -> SettingsScreen(
+                    store,
+                    speechDebug = "Session engine: ${net.engineForSession} • " +
+                        "Vosk model: ${if (vosk.isReady()) "ready" else "missing"} • " +
+                        "Piper voice: ${if (piper.isReady()) "model present, engine pending espeak-ng" else "missing"}",
+                    onBack = { go(Route.Profile) }
+                )
+                Route.Stats -> StatsScreen(store) { go(Route.Profile) }
+                Route.Custom -> CustomLessonDialog(store, onClose = { go(Route.Practice) }, onOpen = { go(Route.Play(it)) })
+                Route.Speed -> SpeedScreen(store, speaker) { go(Route.Practice) }
+                Route.WordBank -> WordBankScreen(store, speaker) { go(Route.Home) }
+                Route.Review -> {
+                    val pool = allLessons().filter { it.unitId != "u6" || store.unitUnlocked("u6") }
+                    val dueAll = pool.flatMap { l -> duePhrases(l, store.srs, limit = 3, maxLevel = store.levelCeiling()) }.distinctBy { it.fr }.take(12)
+                    val lesson = if (dueAll.isNotEmpty()) Lesson("review", "🔁", "Révision", "Review", "Marudio", dueAll, "u1")
+                    else pool.randomOrNull() ?: LESSONS.first()
+                    LessonScreen(store, speaker, speechEnv, lesson) { go(Route.Practice) }
+                }
             }
-            Route.Call -> CallScreen(store, speaker, speechEnv) { route = Route.Home }
-            Route.Settings -> SettingsScreen(
-                store,
-                speechDebug = "Session engine: ${net.engineForSession} • " +
-                    "Vosk model: ${if (vosk.isReady()) "ready" else "missing"} • " +
-                    "Piper voice: ${if (piper.isReady()) "model present, engine pending espeak-ng" else "missing"}",
-                onBack = { route = Route.Home }
-            )
-            Route.Stats -> StatsScreen(store) { route = Route.Home }
-            Route.Custom -> CustomLessonDialog(store, onClose = { route = Route.Home }, onOpen = { route = Route.Play(it) })
-            Route.Speed -> SpeedScreen(store, speaker) { route = Route.Home }
-            Route.WordBank -> WordBankScreen(store, speaker) { route = Route.Home }
-            Route.Review -> {
-                // Locked U6 lessons never leak into review before the capstone unlocks.
-                val pool = allLessons().filter { it.unitId != "u6" || store.unitUnlocked("u6") }
-                val dueAll = pool.flatMap { l -> duePhrases(l, store.srs, limit = 3, maxLevel = store.levelCeiling()) }.distinctBy { it.fr }.take(12)
-                val lesson = if (dueAll.isNotEmpty()) Lesson("review", "🔁", "Révision", "Review", "Marudio", dueAll, "u1")
-                else pool.randomOrNull() ?: LESSONS.first()
-                LessonScreen(store, speaker, speechEnv, lesson) { route = Route.Home }
             }
         }
-        }
+        if (onTab) BottomNav(current = route, onSelect = { go(it) })
     }
     }
 }
 
-/** One-time "Setting up your offline French voice…" screen (§9.4). */
+@Composable
+private fun BottomNav(current: Route, onSelect: (Route) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .background(Surface)
+            .navigationBarsPadding()
+            .padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceEvenly
+    ) {
+        TABS.forEach { tab ->
+            val selected = current == tab.route
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .clip(Rad.md)
+                    .background(if (selected) CobaltSoft else androidx.compose.ui.graphics.Color.Transparent)
+                    .clickable { onSelect(tab.route) }
+                    .padding(horizontal = 14.dp, vertical = 6.dp)
+                    .semantics { contentDescription = tab.label; role = Role.Tab }
+            ) {
+                Text(tab.icon, fontSize = 20.sp)
+                Text(
+                    tab.label,
+                    style = T.caption,
+                    color = if (selected) Cobalt else InkMuted,
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun SetupScreen(onDone: () -> Unit) {
     val ctx = LocalContext.current
@@ -162,27 +238,27 @@ private fun SetupScreen(onDone: () -> Unit) {
         ModelInstaller.install(ctx) { progress = it }
         onDone()
     }
-    // §46: model installation stays photo-free (technical clarity).
     Column(
         Modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text("🇫🇷", fontSize = 64.sp)
+        Mascot(MascotMood.HAPPY, size = 120.dp)
         Spacer(Modifier.height(16.dp))
         Text(
             "Setting up your offline French voice…",
-            fontSize = 20.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center
+            style = T.section, textAlign = TextAlign.Center, color = Ink
         )
         Spacer(Modifier.height(8.dp))
         Text(
             "One-time setup — after this, everything works with no internet.",
-            fontSize = 14.sp, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+            style = T.secondary, textAlign = TextAlign.Center, color = InkSoft
         )
         Spacer(Modifier.height(24.dp))
         LinearProgressIndicator(
             progress = { progress.fraction },
-            modifier = Modifier.fillMaxWidth().height(10.dp).clip(Rad.pill)
+            modifier = Modifier.fillMaxWidth().height(10.dp).clip(Rad.pill),
+            color = Cobalt
         )
     }
 }

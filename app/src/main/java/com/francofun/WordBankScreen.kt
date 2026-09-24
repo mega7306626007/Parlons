@@ -28,7 +28,6 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.francofun.R
 
 /** §7 word bank: every phrase ever met, with mastery box, audio, and lesson source. All on-device. */
 @Composable
@@ -47,11 +46,11 @@ fun WordBankScreen(store: Store, speaker: Speaker, onBack: () -> Unit) {
             }
             .sortedWith(compareBy({ it.second }, { it.first.fr }))
     }
-    PhotoBg(R.drawable.bg_word_bank) {
-    Column(Modifier.fillMaxSize().padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+    AppBackground(tint = TurquoiseSoft) {
+    Column(Modifier.fillMaxSize().padding(Sp.xxl), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onBack).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
-            Text("📖 Word bank (${rows.size})", style = T.screenTitle, color = Blue)
+            Text("📖 Word bank (${rows.size})", style = T.screenTitle, color = Ink)
         }
         OutlinedTextField(
             value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(),
