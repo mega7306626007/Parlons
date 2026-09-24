@@ -162,7 +162,7 @@ private fun SetupScreen(onDone: () -> Unit) {
         ModelInstaller.install(ctx) { progress = it }
         onDone()
     }
-    PhotoBg(R.drawable.bg_offline) {
+    // §46: model installation stays photo-free (technical clarity).
     Column(
         Modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -184,6 +184,5 @@ private fun SetupScreen(onDone: () -> Unit) {
             progress = { progress.fraction },
             modifier = Modifier.fillMaxWidth().height(10.dp).clip(Rad.pill)
         )
-    }
     }
 }

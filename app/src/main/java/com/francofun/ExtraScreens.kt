@@ -87,7 +87,7 @@ fun OnboardingScreen(store: Store, onDone: () -> Unit) {
 fun StatsScreen(store: Store, onBack: () -> Unit) {
     val week = store.weeklyXp()
     val max = (week.maxOrNull() ?: 1).coerceAtLeast(1)
-    PhotoBg(R.drawable.bg_progress) {
+    // §46: dense statistics stay photo-free for maximum clarity.
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onBack).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
@@ -134,7 +134,6 @@ fun StatsScreen(store: Store, onBack: () -> Unit) {
                 Column { Text(b.fr, style = T.bodySemi, color = Ink); Text(b.desc, style = T.secondary, color = InkSoft) }
             }
         }
-    }
     }
 }
 

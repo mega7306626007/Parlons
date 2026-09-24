@@ -20,8 +20,13 @@ Downloaded specifically for Parlons (not bulk-scraped). Optimized for portrait m
 | `bg_voice_call.webp` | Voice Call | 6919949 | https://www.pexels.com/photo/a-woman-talking-on-a-microphone-while-wearing-a-headphone-6919949/ |
 | `bg_progress.webp` | Stats / Progress | 9949055 | https://www.pexels.com/photo/blurred-motion-of-people-on-the-street-and-sunset-over-a-city-9949055/ |
 | `bg_custom_lessons.webp` | Custom lessons | 4468011 | https://www.pexels.com/photo/crop-woman-taking-notes-and-working-on-laptop-4468011/ |
-| `bg_offline.webp` | Offline engines | 5538615 | https://www.pexels.com/photo/thoughtful-young-asian-woman-working-on-laptop-in-street-cafe-5538615/ |
+| `bg_offline.webp` | Offline engines (bundled; setup screen is photo-free per §46) | 5538615 | https://www.pexels.com/photo/thoughtful-young-asian-woman-working-on-laptop-in-street-cafe-5538615/ |
+| `bg_food.webp` | Food/drink lessons (§39) | 1640772 | https://www.pexels.com/photo/1640772/ |
+| `bg_city_ctx.webp` | City/transport lessons (§39) | 378570 | https://www.pexels.com/photo/378570/ |
+| `bg_travel.webp` | Travel lessons (§39) | 346885 | https://www.pexels.com/photo/346885/ |
 
 Selection criteria (§36, §48): realistic photography, natural light, negative space for UI, no prominent logos/trademarks, no copyrighted artwork, portrait-crop friendly, calm enough for text overlays.
 
-Settings intentionally uses **no photograph** (§46 — functional clarity).
+**No photograph** on Settings, Stats, and model setup (§46 — functional/technical clarity).
+
+Lesson screens use stable theme→photo mapping via `photoForLesson()` (§39); never random per frame.

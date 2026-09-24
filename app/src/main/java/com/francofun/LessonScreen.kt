@@ -86,7 +86,7 @@ fun LessonScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, lesson: L
     when {
         outOfHearts -> OutOfHearts(store.helpLang, onExit)
         done == null -> Quiz(store, speaker, speechEnv, questions, onExit,
-            bgRes = if (lesson.id == "review") R.drawable.bg_srs else R.drawable.bg_lesson,
+            bgRes = photoForLesson(lesson),
             onFinish = { correct, speak -> finishedCorrect = correct; speakOk = speak },
             onOutOfHearts = { outOfHearts = true }
         )

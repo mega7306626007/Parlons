@@ -82,3 +82,27 @@ object PhotoRes {
     var customLessons: Int = 0
     var offline: Int = 0
 }
+
+/**
+ * §39: contextual lesson photography — stable mapping by lesson theme
+ * (never random per-frame). Falls back to the default study photo.
+ */
+fun photoForLesson(lesson: Lesson): Int = when {
+    lesson.id == "review" || lesson.id == "marathon" || lesson.id == "reviewa2" -> R.drawable.bg_srs
+    lesson.id in setOf("food", "restaurant", "breakfast", "cooking") -> R.drawable.bg_food
+    lesson.id in setOf("shop", "clothes", "home", "sunday") -> R.drawable.bg_custom_lessons
+    lesson.id == "travel" || lesson.id == "airport" || lesson.id == "hotel" -> R.drawable.bg_travel
+    lesson.id in setOf("city", "transport", "directions", "weekend") -> R.drawable.bg_city_ctx
+    lesson.id in setOf(
+        "friends", "meetup", "daystory", "debate", "slang", "roast", "sorry",
+        "flirt", "interview", "wedding", "derby", "feel", "family", "opinions"
+    ) -> R.drawable.bg_conversation
+    lesson.id in setOf(
+        "school", "verbs", "past", "numbers", "alphabet", "exams", "b1past", "b1future", "bridgeb1"
+    ) -> R.drawable.bg_lesson
+    lesson.id in setOf(
+        "money", "bank", "housing", "doctor", "health", "police", "emergencies"
+    ) -> R.drawable.bg_progress
+    lesson.unitId == "u5" || lesson.unitId == "u6" -> R.drawable.bg_conversation
+    else -> R.drawable.bg_lesson
+}

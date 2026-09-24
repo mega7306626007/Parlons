@@ -21,9 +21,12 @@ All background photos in this project are downloaded from **Pexels** under the [
 | bg_progress.webp | Progress | 9949055 | https://www.pexels.com/photo/blurred-motion-of-people-on-the-street-and-sunset-over-a-city-9949055/ |
 | bg_custom_lessons.webp | Custom Lessons | 4468011 | https://www.pexels.com/photo/crop-woman-taking-notes-and-working-on-laptop-4468011/ |
 | bg_offline.webp | Offline Engines | 5538615 | https://www.pexels.com/photo/thoughtful-young-asian-woman-working-on-laptop-in-street-cafe-5538615/ |
+| bg_food.webp | Food lessons | 1640772 | https://www.pexels.com/photo/1640772/ |
+| bg_city_ctx.webp | City lessons | 378570 | https://www.pexels.com/photo/378570/ |
+| bg_travel.webp | Travel lessons | 346885 | https://www.pexels.com/photo/346885/ |
 
 Downloaded via direct Pexels image URLs (not bulk-scraped). Selected for portrait mobile composition, negative space for UI overlays, no prominent logos/trademarks, natural environments. Converted to WebP (q78, max width 1080) for APK size.
 
-**Settings intentionally has NO photograph** (§46 — functional clarity).
+**No photograph** on Settings, Stats, and model installation (§46 — functional/technical clarity).
 
-Images are bundled offline; the app never depends on network for background rendering (§44). Overlays/scrims applied at runtime via `PhotoBg` (§38, §45).
+Images are bundled offline; the app never depends on network for background rendering (§44). Overlays/scrims applied at runtime via `PhotoBg` (§38, §45). Lesson photography is selected by stable theme mapping (`photoForLesson`, §39).
