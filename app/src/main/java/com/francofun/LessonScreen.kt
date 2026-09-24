@@ -227,6 +227,10 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
                         }
                         if (mic.listening) VoiceWaveform(active = true, color = Blue, modifier = Modifier.fillMaxWidth().padding(horizontal = Sp.xl))
                         Text(when { mic.listening -> "Listening…"; heard.isNotEmpty() -> "I heard: $heard"; else -> "Tap the mic and speak" }, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, style = T.secondary)
+                        // ELSA-style word-level color feedback after grading
+                        if (result != null && heard.isNotBlank()) {
+                            PronunciationFeedback(q.phrase.fr, heard)
+                        }
                         if (result == null) TextButton(onClick = { combo = 0; next() }, modifier = Modifier.fillMaxWidth()) { Text("Can't speak right now, skip") }
                     }
                     QType.CLOZE -> {
@@ -385,6 +389,66 @@ private fun Options(q: Question, chosen: String?, result: Boolean?, onPick: (Str
 
 @Composable
 private fun Prompt(text: String) { Text(text, style = T.section, color = Ink, modifier = Modifier.padding(top = Sp.sm)) }
+
+/** Word-by-word pronunciation coloring + score (research: ELSA-style feedback). */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun PronunciationFeedback(target: String, heard: String) {
+    val hits = remember(target, heard) { wordHits(target, heard) }
+    val score = pronunciationScore(hits)
+    val pct = (score * 100).toInt()
+    val words = remember(target) { target.split(Regex("\\s+")).filter { it.isNotBlank() } }
+
+    Card {
+        Column(verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("🎯 Pronunciation", style = T.label, color = Violet, modifier = Modifier.weight(1f))
+                Text(
+                    "$pct%",
+                    style = T.stat,
+                    color = when {
+                        score >= 0.85f -> Emerald
+                        score >= 0.6f -> Gold
+                        else -> Coral
+                    }
+                )
+            }
+            // Colored target words
+            androidx.compose.foundation.layout.FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(Sp.xs),
+                verticalArrangement = Arrangement.spacedBy(Sp.xs)
+            ) {
+                words.forEachIndexed { i, w ->
+                    val hit = hits.getOrElse(i) { WordHit.MISS }
+                    val (bg, fg) = when (hit) {
+                        WordHit.GOOD -> EmeraldSoft to Emerald
+                        WordHit.PARTIAL -> GoldSoft to Color(0xFFB45309)
+                        WordHit.MISS -> CoralSoft to Coral
+                    }
+                    Text(
+                        w,
+                        style = T.bodySemi,
+                        color = fg,
+                        modifier = Modifier
+                            .clip(Rad.sm)
+                            .background(bg)
+                            .padding(horizontal = Sp.xs, vertical = 2.dp)
+                    )
+                }
+            }
+            val weak = words.filterIndexed { i, _ -> hits.getOrElse(i) { WordHit.MISS } != WordHit.GOOD }
+            if (weak.isNotEmpty()) {
+                Text(
+                    "Work on: ${weak.joinToString(", ")}",
+                    style = T.caption,
+                    color = InkSoft
+                )
+            } else {
+                Text("Perfect pronunciation! 🌟", style = T.caption, color = Emerald)
+            }
+        }
+    }
+}
 
 @Composable
 private fun BigPhrase(text: String, onSpeak: () -> Unit) {

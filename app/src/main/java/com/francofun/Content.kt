@@ -731,7 +731,69 @@ fun buildQuestions(lesson: Lesson, lang: HelpLang, count: Int = 12, due: List<Ph
                 Question(type, Phrase(ans, v.en, v.sw, null, "Conjugate ${v.infinitive}"), answer = v.present[pron] ?: "", verb = v.infinitive, pronoun = pron, hint = "${v.infinitive} / $pron")
             }
         }
+    }.let { scaffold(it) }
+}
+
+/** Relative difficulty 1 (easy recognition) … 5 (open production). */
+fun typeDifficulty(t: QType): Int = when (t) {
+    QType.FR_TO_MEANING, QType.LISTEN -> 1
+    QType.MEANING_TO_FR, QType.CLOZE, QType.MATCH, QType.STORY -> 2
+    QType.ORDER, QType.MINIMAL_PAIR, QType.REPLAY -> 3
+    QType.TYPE, QType.DICTATION, QType.CONJUGATE -> 4
+    QType.SPEAK -> 5
+}
+
+/**
+ * Research-backed scaffolding: start easy, peak mid-session, finish easy
+ * so learners leave on a confidence high (desirable-difficulty curve).
+ */
+fun scaffold(questions: List<Question>): List<Question> {
+    if (questions.size < 5) return questions
+    val sorted = questions.sortedBy { typeDifficulty(it.type) + Math.random() * 0.3 }
+    val evens = sorted.filterIndexed { i, _ -> i % 2 == 0 }
+    val odds = sorted.filterIndexed { i, _ -> i % 2 == 1 }.reversed()
+    return evens + odds
+}
+
+/** How well each target word was said (for ELSA-style color feedback). */
+enum class WordHit { GOOD, PARTIAL, MISS }
+
+/**
+ * Align heard words to target words and score each: green ≥0.8 sim,
+ * yellow ≥0.45, red below. Missing trailing words are MISS.
+ */
+fun wordHits(target: String, heard: String): List<WordHit> {
+    val t = target.split(Regex("\\s+")).filter { it.isNotBlank() }
+    if (t.isEmpty()) return emptyList()
+    val h = heard.split(Regex("\\s+")).filter { it.isNotBlank() }
+    return t.mapIndexed { i, tw ->
+        val hw = h.getOrNull(i)
+        when {
+            hw == null -> WordHit.MISS
+            norm(tw) == norm(hw) -> WordHit.GOOD
+            else -> {
+                val s = similarity(tw, hw)
+                when {
+                    s >= 0.8 -> WordHit.GOOD
+                    s >= 0.45 -> WordHit.PARTIAL
+                    else -> WordHit.MISS
+                }
+            }
+        }
     }
+}
+
+/** Pronunciation score 0..1 from word hits (research: word-level coloring). */
+fun pronunciationScore(hits: List<WordHit>): Float {
+    if (hits.isEmpty()) return 0f
+    val pts = hits.sumOf {
+        when (it) {
+            WordHit.GOOD -> 1.0
+            WordHit.PARTIAL -> 0.5
+            WordHit.MISS -> 0.0
+        }
+    }
+    return (pts / hits.size).toFloat()
 }
 
 // ---- speech-answer matching (forgiving of accents / punctuation) ----
