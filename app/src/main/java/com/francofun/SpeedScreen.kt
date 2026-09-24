@@ -11,8 +11,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,7 +26,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -63,14 +66,14 @@ fun SpeedScreen(store: Store, speaker: Speaker, onExit: () -> Unit) {
     }
 
     if (over) {
-        Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Column(Modifier.fillMaxSize().padding(Sp.xxl), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text("⚡", fontSize = 80.sp)
-            Spacer(Modifier.height(12.dp))
-            Text("Speed round over!", fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Blue, textAlign = TextAlign.Center)
-            Spacer(Modifier.height(8.dp))
-            Text("$correct correct • best combo x$bestCombo", fontSize = 20.sp)
-            Text("+$xpGained XP ⭐", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Gold)
-            Spacer(Modifier.height(32.dp))
+            Spacer(Modifier.padding(Sp.sm))
+            Text("Speed round over!", style = T.screenTitle, color = Blue, textAlign = TextAlign.Center)
+            Spacer(Modifier.padding(Sp.xs))
+            Text("$correct correct • best combo x$bestCombo", style = T.section, color = Ink)
+            Text("+$xpGained XP ⭐", style = T.number, color = Gold)
+            Spacer(Modifier.padding(Sp.xxl))
             BigButton("CONTINUE", onClick = onExit)
         }
         return
@@ -85,27 +88,34 @@ fun SpeedScreen(store: Store, speaker: Speaker, onExit: () -> Unit) {
     }
 
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("✕", fontSize = 24.sp, modifier = Modifier.clickable(onClick = onExit).padding(end = 12.dp))
+        Row(Modifier.padding(horizontal = Sp.md, vertical = Sp.sm), verticalAlignment = Alignment.CenterVertically) {
+            Text("✕", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onExit).padding(end = Sp.sm).semantics { contentDescription = "Exit speed round"; role = Role.Button })
             Column(Modifier.weight(1f)) {
-                Text("⏱ $left s", fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = if (left <= 10) Red else Blue)
-                LinearProgressIndicator(progress = { left / 60f }, modifier = Modifier.fillMaxWidth().height(8.dp).clip(RoundedCornerShape(50)), color = if (left <= 10) Red else Green)
+                Text("⏱ $left s", style = T.bodySemi, color = if (left <= 10) Red else Blue)
+                LinearProgressIndicator(
+                    progress = { left / 60f },
+                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(R.pill),
+                    color = if (left <= 10) Red else Gold,
+                    trackColor = Color(0xFFE3E7F2)
+                )
             }
-            if (combo >= 2) Text("  🔥x$combo", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text("  ⭐$correct", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            if (combo >= 2) Text("  🔥x$combo", style = T.bodySemi, color = Gold)
+            Text("  ⭐$correct", style = T.bodySemi, color = Blue)
         }
-        Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text("What does this mean? (fast!)", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1F2937))
+        Column(Modifier.weight(1f).fillMaxWidth().padding(horizontal = Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+            Text("What does this mean? (fast!)", style = T.section, color = Ink)
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("🔊", fontSize = 30.sp, modifier = Modifier.clickable { speaker.speak(ph.fr) }.padding(end = 12.dp))
-                Text(ph.fr, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = Blue)
+                Text("🔊", fontSize = 30.sp, modifier = Modifier.clickable { speaker.speak(ph.fr) }.padding(end = Sp.sm).semantics { contentDescription = "Play audio"; role = Role.Button })
+                Text(ph.fr, style = T.display, color = Blue)
             }
             options.forEach { opt ->
+                val isRight = opt == ph.meaning(lang)
                 Box(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(Color.White)
-                        .border(2.dp, Color(0xFFD0D5E0), RoundedCornerShape(16.dp))
+                    Modifier.fillMaxWidth().clip(R.xl).background(Surface)
+                        .border(2.dp, Color(0xFFD0D5E0), R.xl)
+                        .semantics(mergeDescendants = true) { contentDescription = opt; role = Role.Button }
                         .clickable {
-                            if (opt == ph.meaning(lang)) {
+                            if (isRight) {
                                 correct++; combo++
                                 if (combo > bestCombo) bestCombo = combo
                                 Sounds.ok(store.soundOn)
@@ -115,8 +125,9 @@ fun SpeedScreen(store: Store, speaker: Speaker, onExit: () -> Unit) {
                             }
                             idx++
                         }
-                        .padding(16.dp)
-                ) { Text(opt, fontSize = 17.sp, fontWeight = FontWeight.SemiBold) }
+                        .heightIn(min = 48.dp)
+                        .padding(Sp.md)
+                ) { Text(opt, style = T.bodySemi, color = Ink) }
             }
         }
     }
