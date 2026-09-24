@@ -108,7 +108,7 @@ object Sp {
 /* ─────────────────────────────────────────────
    CORNER RADII — deliberate values (§3)
    ───────────────────────────────────────────── */
-object R {
+object Rad {
     val sm  = RoundedCornerShape(4.dp)
     val md  = RoundedCornerShape(8.dp)
     val lg  = RoundedCornerShape(12.dp)
@@ -134,7 +134,7 @@ fun ParlonsTheme(dark: Boolean = false, content: @Composable () -> Unit) {
 fun BigButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, color: Color = Blue) {
     Button(
         onClick = onClick, enabled = enabled,
-        shape = R.xl,
+        shape = Rad.xl,
         colors = ButtonDefaults.buttonColors(containerColor = color, disabledContainerColor = Color(0xFFD0D5E0)),
         modifier = modifier.fillMaxWidth().height(54.dp)
     ) { Text(text, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
@@ -143,9 +143,9 @@ fun BigButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, 
 @Composable
 fun OutlinedButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = Blue) {
     Button(
-        onClick = onClick, shape = R.xl,
+        onClick = onClick, shape = Rad.xl,
         colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = color),
-        modifier = modifier.fillMaxWidth().height(54.dp).border(1.5.dp, color, R.xl)
+        modifier = modifier.fillMaxWidth().height(54.dp).border(1.5.dp, color, Rad.xl)
     ) { Text(text, fontWeight = FontWeight.SemiBold, fontSize = 16.sp) }
 }
 
@@ -153,9 +153,9 @@ fun OutlinedButton(text: String, onClick: () -> Unit, modifier: Modifier = Modif
 fun Chip(text: String, selected: Boolean, label: String = text, onClick: () -> Unit) {
     Box(
         Modifier
-            .clip(R.pill)
+            .clip(Rad.pill)
             .background(if (selected) Blue else Surface)
-            .border(1.dp, if (selected) Blue else Color(0xFFD0D5E0), R.pill)
+            .border(1.dp, if (selected) Blue else Color(0xFFD0D5E0), Rad.pill)
             .semantics(mergeDescendants = true) { contentDescription = label; role = Role.Button }
             .clickable(onClick = onClick)
             .heightIn(min = 48.dp)

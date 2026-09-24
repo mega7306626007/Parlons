@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.francofun.R
 import java.time.LocalDate
 
 @Composable
@@ -42,6 +43,7 @@ fun HomeScreen(
     val lang = store.helpLang
     val dueN = allDueCount(store.srs)
     val (into, need) = xpIntoLevel(store.xp)
+    PhotoBg(R.drawable.bg_home) {
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(Sp.xxl),
@@ -71,6 +73,7 @@ fun HomeScreen(
             item { CapstoneCard(onMarathon, onChainChat) }
         }
         item { BadgesSection(store, onStats) }
+    }
     }
 }
 
@@ -109,7 +112,7 @@ private fun ProgressCard(store: Store, into: Int, need: Int) {
                 Text("Level ${levelForXp(store.xp)} · ${levelTitle(levelForXp(store.xp))}", style = T.bodySemi)
                 LinearProgressIndicator(
                     progress = { into / need.toFloat() },
-                    Modifier.fillMaxWidth().height(6.dp).clip(R.md),
+                    Modifier.fillMaxWidth().height(6.dp).clip(Rad.md),
                     color = Blue
                 )
                 Text("Today ${store.todayXp}/${store.dailyGoalXp} XP · ${store.todayLessons} lessons", style = T.caption)
@@ -154,7 +157,7 @@ private fun HeroCta(lang: HelpLang, onChat: () -> Unit, onCall: () -> Unit, onSp
 @Composable
 private fun TonalChip(icon: String, text: String, onClick: () -> Unit) {
     Box(
-        Modifier.clip(R.pill).background(Blue.copy(alpha = 0.15f))
+        Modifier.clip(Rad.pill).background(Blue.copy(alpha = 0.15f))
             .clickable(onClick = onClick).padding(horizontal = Sp.md, vertical = Sp.sm),
         contentAlignment = Alignment.Center
     ) {

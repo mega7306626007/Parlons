@@ -28,6 +28,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.francofun.R
 
 /** §7 word bank: every phrase ever met, with mastery box, audio, and lesson source. All on-device. */
 @Composable
@@ -46,6 +47,7 @@ fun WordBankScreen(store: Store, speaker: Speaker, onBack: () -> Unit) {
             }
             .sortedWith(compareBy({ it.second }, { it.first.fr }))
     }
+    PhotoBg(R.drawable.bg_word_bank) {
     Column(Modifier.fillMaxSize().padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onBack).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
@@ -53,7 +55,7 @@ fun WordBankScreen(store: Store, speaker: Speaker, onBack: () -> Unit) {
         }
         OutlinedTextField(
             value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Search French or meaning…") }, singleLine = true, shape = R.xl
+            placeholder = { Text("Search French or meaning…") }, singleLine = true, shape = Rad.xl
         )
         Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs)) {
             listOf("All", "A1", "A2", "B1").forEach { lv -> Chip(lv, level == lv) { level = lv } }
@@ -62,7 +64,7 @@ fun WordBankScreen(store: Store, speaker: Speaker, onBack: () -> Unit) {
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
             items(rows, key = { it.first.fr }) { (p, box, lesson) ->
                 Row(
-                    Modifier.fillMaxWidth().clip(R.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), R.xl).padding(Sp.sm),
+                    Modifier.fillMaxWidth().clip(Rad.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), Rad.xl).padding(Sp.sm),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text("🔊", fontSize = 22.sp, modifier = Modifier.clickable { speaker.speak(p.fr) }.padding(end = Sp.sm).semantics { contentDescription = "Play ${p.fr}"; role = Role.Button })
@@ -78,5 +80,6 @@ fun WordBankScreen(store: Store, speaker: Speaker, onBack: () -> Unit) {
                 }
             }
         }
+    }
     }
 }

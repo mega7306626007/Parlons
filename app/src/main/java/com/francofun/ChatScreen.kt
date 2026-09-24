@@ -48,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.francofun.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -166,6 +167,7 @@ fun ChatScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, chain: Bool
         if (n > 0) listState.animateScrollToItem(n - 1)
     }
 
+    PhotoBg(R.drawable.bg_conversation) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.padding(horizontal = Sp.md, vertical = Sp.sm), verticalAlignment = Alignment.CenterVertically) {
             Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onBack).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
@@ -244,7 +246,7 @@ fun ChatScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, chain: Bool
                 maxLines = 3,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = { send(input) }),
-                shape = R.pill
+                shape = Rad.pill
             )
             Spacer(Modifier.size(6.dp))
             Box(
@@ -263,6 +265,7 @@ fun ChatScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, chain: Bool
         }
         Text("+2 XP per message • ${store.todayChat} today", style = T.caption, modifier = Modifier.padding(horizontal = Sp.md, vertical = Sp.xxs))
     }
+    }
 }
 
 @Composable
@@ -278,7 +281,7 @@ private fun Bubble(m: ChatMsg, lang: HelpLang, onSpeak: () -> Unit, onToggleHelp
             }
             if (m.correction.isNotBlank()) {
                 Box(
-                    Modifier.widthIn(max = 300.dp).clip(R.md)
+                    Modifier.widthIn(max = 300.dp).clip(Rad.md)
                         .background(Color(0xFFFFF3CD)).padding(Sp.xs)
                 ) {
                     Text(
@@ -292,8 +295,8 @@ private fun Bubble(m: ChatMsg, lang: HelpLang, onSpeak: () -> Unit, onToggleHelp
             Text("🦁", fontSize = 26.sp, modifier = Modifier.padding(end = Sp.xs, top = Sp.xxs))
             Column(
                 Modifier.widthIn(max = 300.dp)
-                    .clip(R.lg)
-                    .background(Surface).border(1.dp, Color(0xFFE3E7F2), R.lg).padding(Sp.sm),
+                    .clip(Rad.lg)
+                    .background(Surface).border(1.dp, Color(0xFFE3E7F2), Rad.lg).padding(Sp.sm),
                 verticalArrangement = Arrangement.spacedBy(Sp.xs)
             ) {
                 Text(m.fr, style = T.bodySemi, color = Ink)

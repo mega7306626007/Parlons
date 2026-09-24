@@ -38,6 +38,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.francofun.R
 import kotlinx.coroutines.launch
 
 @Composable
@@ -86,12 +87,13 @@ fun OnboardingScreen(store: Store, onDone: () -> Unit) {
 fun StatsScreen(store: Store, onBack: () -> Unit) {
     val week = store.weeklyXp()
     val max = (week.maxOrNull() ?: 1).coerceAtLeast(1)
+    PhotoBg(R.drawable.bg_progress) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onBack).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
             Text("Stats 📊", style = T.screenTitle, color = Blue)
         }
-        Row(Modifier.fillMaxWidth().clip(R.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), R.xl).padding(Sp.md), horizontalArrangement = Arrangement.SpaceEvenly) {
+        Row(Modifier.fillMaxWidth().clip(Rad.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), Rad.xl).padding(Sp.md), horizontalArrangement = Arrangement.SpaceEvenly) {
             StatBox("🔥", "${store.streak}", "streak")
             StatBox("⭐", "${store.xp}", "XP")
             StatBox("🏅", "${store.badges.size}/${BADGES.size}", "badges")
@@ -106,13 +108,13 @@ fun StatsScreen(store: Store, onBack: () -> Unit) {
             store.todayXp >= dailyAvg -> "✅ Right on your usual pace."
             else -> "🐢 A little below your usual pace — one lesson fixes it."
         }
-        Column(Modifier.fillMaxWidth().clip(R.xl).background(BlueLight).border(1.dp, Color(0xFFD6E0FF), R.xl).padding(Sp.md), verticalArrangement = Arrangement.spacedBy(Sp.xxs)) {
+        Column(Modifier.fillMaxWidth().clip(Rad.xl).background(BlueLight).border(1.dp, Color(0xFFD6E0FF), Rad.xl).padding(Sp.md), verticalArrangement = Arrangement.spacedBy(Sp.xxs)) {
             Text("📰 Weekly recap", style = T.bodySemi, color = Ink)
             Text("This week: $weekSum XP • ${store.streak}-day streak • ${store.lessonsDone} lessons done • ${store.wordsLearnedCount()} words learned", style = T.secondary, color = InkSoft)
             Text(pace, style = T.label, color = Blue)
         }
         Text("Last 7 days XP", style = T.bodySemi, color = Ink)
-        Box(Modifier.fillMaxWidth().height(160.dp).clip(R.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), R.xl).padding(Sp.sm)) {
+        Box(Modifier.fillMaxWidth().height(160.dp).clip(Rad.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), Rad.xl).padding(Sp.sm)) {
             Canvas(Modifier.fillMaxSize()) {
                 val bw = size.width / 7
                 week.forEachIndexed { i, v ->
@@ -127,11 +129,12 @@ fun StatsScreen(store: Store, onBack: () -> Unit) {
         Text("Trophies 🏆", style = T.bodySemi, color = Ink)
         BADGES.forEach { b ->
             val got = store.badges[b.id] == true
-            Row(Modifier.fillMaxWidth().clip(R.lg).background(if (got) Color(0xFFFFF8E1) else Surface).border(1.dp, Color(0xFFE3E7F2), R.lg).padding(Sp.sm), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().clip(Rad.lg).background(if (got) Color(0xFFFFF8E1) else Surface).border(1.dp, Color(0xFFE3E7F2), Rad.lg).padding(Sp.sm), verticalAlignment = Alignment.CenterVertically) {
                 Text(if (got) b.emoji else "🔒", fontSize = 24.sp, modifier = Modifier.padding(end = Sp.sm))
                 Column { Text(b.fr, style = T.bodySemi, color = Ink); Text(b.desc, style = T.secondary, color = InkSoft) }
             }
         }
+    }
     }
 }
 
@@ -151,22 +154,23 @@ fun CustomLessonDialog(store: Store, onClose: () -> Unit, onOpen: (Lesson) -> Un
     var meaning by remember { mutableStateOf("") }
     var err by remember { mutableStateOf("") }
     val phrases = remember { mutableStateListOf<Phrase>() }
+    PhotoBg(R.drawable.bg_custom_lessons) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onClose).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
             Text("✨ Custom lesson", style = T.screenTitle, color = Blue)
         }
         Text("Build your own lesson offline — add at least 3 phrases, then save and practise.", style = T.secondary, color = InkSoft)
-        OutlinedTextField(value = title, onValueChange = { title = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Lesson title, e.g. Matatu") }, singleLine = true, shape = R.xl)
-        OutlinedTextField(value = fr, onValueChange = { fr = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("French, e.g. Je prends le matatu") }, singleLine = true, shape = R.xl)
-        OutlinedTextField(value = meaning, onValueChange = { meaning = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Meaning, e.g. I take the matatu") }, singleLine = true, shape = R.xl)
+        OutlinedTextField(value = title, onValueChange = { title = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Lesson title, e.g. Matatu") }, singleLine = true, shape = Rad.xl)
+        OutlinedTextField(value = fr, onValueChange = { fr = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("French, e.g. Je prends le matatu") }, singleLine = true, shape = Rad.xl)
+        OutlinedTextField(value = meaning, onValueChange = { meaning = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Meaning, e.g. I take the matatu") }, singleLine = true, shape = Rad.xl)
         if (err.isNotBlank()) Text(err, style = T.secondary, color = Red)
         BigButton("Add phrase (${phrases.size})", enabled = fr.isNotBlank() && meaning.isNotBlank(), onClick = {
             phrases.add(Phrase(fr.trim(), meaning.trim(), meaning.trim()))
             fr = ""; meaning = ""; err = ""
         })
         phrases.forEachIndexed { i, p ->
-            Row(Modifier.fillMaxWidth().clip(R.lg).background(Surface).border(1.dp, Color(0xFFE3E7F2), R.lg).padding(Sp.sm), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().clip(Rad.lg).background(Surface).border(1.dp, Color(0xFFE3E7F2), Rad.lg).padding(Sp.sm), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) { Text(p.fr, style = T.bodySemi, color = Ink); Text(p.en, style = T.secondary, color = InkSoft) }
                 Text("✕", style = T.label, color = Red, modifier = Modifier.clickable { phrases.removeAt(i) }.padding(Sp.xs))
             }
@@ -180,7 +184,7 @@ fun CustomLessonDialog(store: Store, onClose: () -> Unit, onOpen: (Lesson) -> Un
         if (customLessonsCache.isNotEmpty()) {
             Text("Your lessons:", style = T.bodySemi, color = Ink)
             customLessonsCache.forEach { l ->
-                Row(Modifier.fillMaxWidth().clip(R.lg).background(Surface).border(1.dp, Color(0xFFE3E7F2), R.lg).padding(Sp.sm), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.fillMaxWidth().clip(Rad.lg).background(Surface).border(1.dp, Color(0xFFE3E7F2), Rad.lg).padding(Sp.sm), verticalAlignment = Alignment.CenterVertically) {
                     Text("📚 ${l.fr} (${l.phrases.size})", style = T.body, color = Ink, modifier = Modifier.weight(1f))
                     Text("Delete", style = T.label, color = Red, modifier = Modifier.clickable {
                         store.saveCustomLessons(customLessonsCache - l)
@@ -189,4 +193,6 @@ fun CustomLessonDialog(store: Store, onClose: () -> Unit, onOpen: (Lesson) -> Un
             }
         }
     }
+    }
 }
+

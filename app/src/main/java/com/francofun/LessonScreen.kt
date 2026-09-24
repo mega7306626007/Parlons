@@ -49,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.francofun.R
 
 @OptIn(ExperimentalLayoutApi::class)
 private fun praise(lang: HelpLang): String = when (lang) {
@@ -170,7 +171,7 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
             Text("✕", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onExit).padding(end = Sp.sm).semantics { contentDescription = "Exit lesson"; role = Role.Button })
             LinearProgressIndicator(
                 progress = { (idx + if (result != null) 1 else 0) / questions.size.toFloat() },
-                modifier = Modifier.weight(1f).height(10.dp).clip(R.pill),
+                modifier = Modifier.weight(1f).height(10.dp).clip(Rad.pill),
                 color = Green,
                 trackColor = Color(0xFFE3E7F2)
             )
@@ -179,7 +180,8 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
         }
 
         key(idx) {
-            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+            PhotoBg(R.drawable.bg_lesson, modifier = Modifier.weight(1f).fillMaxWidth()) {
+            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
                 when (q.type) {
                     QType.FR_TO_MEANING -> {
                         Prompt("What does this mean?")
@@ -204,7 +206,7 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
                     QType.ORDER -> {
                         Prompt("Build the sentence in French")
                         Text(q.phrase.meaning(lang), style = T.section, color = Ink)
-                        FlowRow(Modifier.fillMaxWidth().heightIn(min = 72.dp).clip(R.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), R.xl).padding(Sp.sm), horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
+                        FlowRow(Modifier.fillMaxWidth().heightIn(min = 72.dp).clip(Rad.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), Rad.xl).padding(Sp.sm), horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
                             used.toList().forEach { wi -> WordChip(q.words[wi], false) { if (result == null) used.removeAll { it == wi } } }
                         }
                         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
@@ -266,13 +268,13 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
                         Prompt("Type it in French")
                         Text(q.phrase.meaning(lang), style = T.section, color = Ink)
                         BigPhrase(q.phrase.fr.takeIf { result != null } ?: "••• 🤫 •••") { speaker.speak(q.phrase.fr) }
-                        OutlinedTextField(value = typed, onValueChange = { typed = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Écris en français…") }, singleLine = true, enabled = result == null, shape = R.xl)
+                        OutlinedTextField(value = typed, onValueChange = { typed = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Écris en français…") }, singleLine = true, enabled = result == null, shape = Rad.xl)
                         AccentRow { typed += it }
                     }
                     QType.CONJUGATE -> {
                         Prompt("Conjugate: ${q.verb} — ${q.pronoun} ___")
                         Text(q.hint, style = T.secondary, color = InkSoft)
-                        OutlinedTextField(value = typed, onValueChange = { typed = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("e.g. suis") }, singleLine = true, enabled = result == null, shape = R.xl)
+                        OutlinedTextField(value = typed, onValueChange = { typed = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("e.g. suis") }, singleLine = true, enabled = result == null, shape = Rad.xl)
                     }
                     QType.DICTATION -> {
                         Prompt("Listen and type what you hear")
@@ -282,7 +284,7 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
                             Spacer(Modifier.size(16.dp))
                             RoundButton("🐢", Color(0xFF7A8AB8)) { speaker.speak(q.answer, slow = true) }
                         }
-                        OutlinedTextField(value = typed, onValueChange = { typed = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Écris ce que tu entends…") }, singleLine = true, enabled = result == null, shape = R.xl)
+                        OutlinedTextField(value = typed, onValueChange = { typed = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Écris ce que tu entends…") }, singleLine = true, enabled = result == null, shape = Rad.xl)
                         AccentRow { typed += it }
                     }
                     QType.MINIMAL_PAIR -> {
@@ -301,7 +303,7 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                             RoundButton("🔊", Blue) { q.replayLines.forEach { speaker.speak(it) } }
                         }
-                        FlowRow(Modifier.fillMaxWidth().heightIn(min = 72.dp).clip(R.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), R.xl).padding(Sp.sm), horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
+                        FlowRow(Modifier.fillMaxWidth().heightIn(min = 72.dp).clip(Rad.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), Rad.xl).padding(Sp.sm), horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
                             used.toList().forEach { wi -> WordChip(q.words[wi], false) { if (result == null) used.removeAll { it == wi } } }
                         }
                         FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
@@ -350,6 +352,7 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
             }
         }
     }
+    }
 }
 
 private enum class OptState { IDLE, SELECTED, CORRECT, WRONG }
@@ -373,7 +376,7 @@ private fun Options(q: Question, chosen: String?, result: Boolean?, onPick: (Str
                 OptState.CORRECT -> GreenLight to Green
                 OptState.WRONG -> RedLight to Red
             }
-            Box(Modifier.fillMaxWidth().clip(R.xl).background(bg).border(2.dp, border, R.xl).semantics(mergeDescendants = true) { contentDescription = opt; role = Role.RadioButton }.clickable(enabled = result == null) { onPick(opt) }.heightIn(min = 48.dp).padding(Sp.md)) { Text(opt, style = T.bodySemi, color = Ink) }
+            Box(Modifier.fillMaxWidth().clip(Rad.xl).background(bg).border(2.dp, border, Rad.xl).semantics(mergeDescendants = true) { contentDescription = opt; role = Role.RadioButton }.clickable(enabled = result == null) { onPick(opt) }.heightIn(min = 48.dp).padding(Sp.md)) { Text(opt, style = T.bodySemi, color = Ink) }
         }
     }
 }
@@ -396,7 +399,7 @@ private fun RoundButton(label: String, color: Color, onClick: () -> Unit) {
 
 @Composable
 private fun WordChip(text: String, faded: Boolean, onClick: () -> Unit) {
-    Box(Modifier.alpha(if (faded) 0.25f else 1f).clip(R.lg).background(Surface).border(2.dp, Color(0xFFD0D5E0), R.lg).semantics(mergeDescendants = true) { contentDescription = text; role = Role.Button }.clickable(onClick = onClick).heightIn(min = 48.dp).padding(horizontal = Sp.md, vertical = Sp.sm)) { Text(text, style = T.bodySemi, color = Ink) }
+    Box(Modifier.alpha(if (faded) 0.25f else 1f).clip(Rad.lg).background(Surface).border(2.dp, Color(0xFFD0D5E0), Rad.lg).semantics(mergeDescendants = true) { contentDescription = text; role = Role.Button }.clickable(onClick = onClick).heightIn(min = 48.dp).padding(horizontal = Sp.md, vertical = Sp.sm)) { Text(text, style = T.bodySemi, color = Ink) }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -404,7 +407,7 @@ private fun WordChip(text: String, faded: Boolean, onClick: () -> Unit) {
 private fun AccentRow(onAccent: (String) -> Unit) {
     FlowRow(horizontalArrangement = Arrangement.spacedBy(Sp.xs)) {
         listOf("é", "è", "ê", "à", "ç", "î", "ô", "û", "’").forEach { a ->
-            Box(Modifier.clip(R.md).background(BlueLight).clickable { onAccent(a) }.heightIn(min = 48.dp).padding(horizontal = Sp.sm, vertical = Sp.xs)) { Text(a, style = T.bodySemi, color = Blue) }
+            Box(Modifier.clip(Rad.md).background(BlueLight).clickable { onAccent(a) }.heightIn(min = 48.dp).padding(horizontal = Sp.sm, vertical = Sp.xs)) { Text(a, style = T.bodySemi, color = Blue) }
         }
     }
 }

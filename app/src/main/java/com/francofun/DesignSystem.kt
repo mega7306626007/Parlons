@@ -56,7 +56,7 @@ import kotlin.random.Random
 /* ── Stat card component ── */
 @Composable
 fun StatCard(icon: String, value: String, label: String, modifier: Modifier = Modifier) {
-    Box(Modifier.clip(R.xl).background(Surface).padding(Sp.md)) {
+    Box(Modifier.clip(Rad.xl).background(Surface).padding(Sp.md)) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(icon, fontSize = 24.sp)
             Text(value, style = T.number)
@@ -92,7 +92,7 @@ fun GradientStrip(colors: List<Color> = listOf(Blue, BlueDim), modifier: Modifie
 /* ── Card surface ── */
 @Composable
 fun Card(modifier: Modifier = Modifier, elevation: Dp = 1.dp, content: @Composable () -> Unit) {
-    Box(Modifier.clip(R.xl).background(Surface).padding(Sp.md)) { content() }
+    Box(Modifier.clip(Rad.xl).background(Surface).padding(Sp.md)) { content() }
 }
 
 /* ── Empty state ── */
@@ -108,7 +108,7 @@ fun EmptyState(icon: String, message: String) {
 /* ── Loading placeholder ── */
 @Composable
 fun LoadingPlaceholder(modifier: Modifier = Modifier, height: Dp = 48.dp) {
-    Box(Modifier.fillMaxWidth().height(height).clip(R.md).background(Color(0xFFE8ECF4)).then(modifier))
+    Box(Modifier.fillMaxWidth().height(height).clip(Rad.md).background(Color(0xFFE8ECF4)).then(modifier))
 }
 
 /* ── Badge count ── */
@@ -131,7 +131,7 @@ fun VoiceWaveform(active: Boolean, barCount: Int = 20, modifier: Modifier = Modi
     }
     Row(modifier.fillMaxWidth().height(32.dp), horizontalArrangement = Arrangement.spacedBy(2.dp), verticalAlignment = Alignment.CenterVertically) {
         heights.forEach { h ->
-            Box(Modifier.width(3.dp).height((if (active) h else 4f).dp).clip(R.sm).background(if (active) color else Color(0xFFD0D5E0)))
+            Box(Modifier.width(3.dp).height((if (active) h else 4f).dp).clip(Rad.sm).background(if (active) color else Color(0xFFD0D5E0)))
         }
     }
 }
@@ -159,9 +159,9 @@ fun FadeInContent(visible: Boolean = true, modifier: Modifier = Modifier, conten
 fun IconChip(icon: String, text: String, selected: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
-            .clip(R.pill)
+            .clip(Rad.pill)
             .background(if (selected) Blue else Surface)
-            .border(1.dp, if (selected) Blue else Color(0xFFD0D5E0), R.pill)
+            .border(1.dp, if (selected) Blue else Color(0xFFD0D5E0), Rad.pill)
             .semantics { contentDescription = text; role = Role.Button }
             .clickable(onClick = onClick)
             .heightIn(min = 48.dp)
@@ -178,7 +178,7 @@ fun IconChip(icon: String, text: String, selected: Boolean, onClick: () -> Unit)
 /* ── Accent card with left bar ── */
 @Composable
 fun AccentCard(accentColor: Color = Blue, modifier: Modifier = Modifier, content: @Composable () -> Unit) {
-    Box(modifier.fillMaxWidth().clip(R.xl).background(Surface)) {
+    Box(modifier.fillMaxWidth().clip(Rad.xl).background(Surface)) {
         Box(Modifier.fillMaxHeight().width(4.dp).background(accentColor))
         Box(Modifier.padding(Sp.md).padding(start = Sp.md)) { content() }
     }

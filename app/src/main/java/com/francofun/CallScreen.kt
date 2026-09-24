@@ -40,6 +40,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.francofun.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -129,6 +130,7 @@ fun CallScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, onBack: () 
         speaker.onDoneListener = null
     }
 
+    PhotoBg(R.drawable.bg_voice_call) {
     Column(Modifier.fillMaxSize().padding(Sp.lg), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = { endCall(); onBack() }).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
@@ -187,7 +189,7 @@ fun CallScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, onBack: () 
         Spacer(Modifier.size(Sp.sm))
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
             items(msgs.toList()) { m ->
-                Box(Modifier.fillMaxWidth().clip(R.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), R.xl).padding(Sp.sm)) {
+                Box(Modifier.fillMaxWidth().clip(Rad.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), Rad.xl).padding(Sp.sm)) {
                     Column {
                         Text(m.fr, style = T.bodySemi, color = Ink)
                         if (hint && m.help.isNotBlank()) Text(m.help, style = T.secondary, color = InkSoft)
@@ -197,5 +199,6 @@ fun CallScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, onBack: () 
                 }
             }
         }
+    }
     }
 }

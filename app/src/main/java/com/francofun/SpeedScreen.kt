@@ -33,6 +33,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.francofun.R
 import kotlinx.coroutines.delay
 
 /** §5.13 speed round: 60-second flashcard sprint over already-seen phrases. Fun + daily-goal padding. */
@@ -87,6 +88,7 @@ fun SpeedScreen(store: Store, speaker: Speaker, onExit: () -> Unit) {
         (wrong + right).shuffled()
     }
 
+    PhotoBg(R.drawable.bg_speed_round) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.padding(horizontal = Sp.md, vertical = Sp.sm), verticalAlignment = Alignment.CenterVertically) {
             Text("✕", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onExit).padding(end = Sp.sm).semantics { contentDescription = "Exit speed round"; role = Role.Button })
@@ -94,7 +96,7 @@ fun SpeedScreen(store: Store, speaker: Speaker, onExit: () -> Unit) {
                 Text("⏱ $left s", style = T.bodySemi, color = if (left <= 10) Red else Blue)
                 LinearProgressIndicator(
                     progress = { left / 60f },
-                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(R.pill),
+                    modifier = Modifier.fillMaxWidth().height(8.dp).clip(Rad.pill),
                     color = if (left <= 10) Red else Gold,
                     trackColor = Color(0xFFE3E7F2)
                 )
@@ -111,8 +113,8 @@ fun SpeedScreen(store: Store, speaker: Speaker, onExit: () -> Unit) {
             options.forEach { opt ->
                 val isRight = opt == ph.meaning(lang)
                 Box(
-                    Modifier.fillMaxWidth().clip(R.xl).background(Surface)
-                        .border(2.dp, Color(0xFFD0D5E0), R.xl)
+                    Modifier.fillMaxWidth().clip(Rad.xl).background(Surface)
+                        .border(2.dp, Color(0xFFD0D5E0), Rad.xl)
                         .semantics(mergeDescendants = true) { contentDescription = opt; role = Role.Button }
                         .clickable {
                             if (isRight) {
@@ -130,5 +132,6 @@ fun SpeedScreen(store: Store, speaker: Speaker, onExit: () -> Unit) {
                 ) { Text(opt, style = T.bodySemi, color = Ink) }
             }
         }
+    }
     }
 }
