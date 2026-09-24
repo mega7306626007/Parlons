@@ -182,13 +182,7 @@ fun App(store: Store) {
                 Route.Custom -> CustomLessonDialog(store, onClose = { go(Route.Practice) }, onOpen = { go(Route.Play(it)) })
                 Route.Speed -> SpeedScreen(store, speaker) { go(Route.Practice) }
                 Route.WordBank -> WordBankScreen(store, speaker) { go(Route.Home) }
-                Route.Review -> {
-                    val pool = allLessons().filter { it.unitId != "u6" || store.unitUnlocked("u6") }
-                    val dueAll = pool.flatMap { l -> duePhrases(l, store.srs, limit = 3, maxLevel = store.levelCeiling()) }.distinctBy { it.fr }.take(12)
-                    val lesson = if (dueAll.isNotEmpty()) Lesson("review", "🔁", "Révision", "Review", "Marudio", dueAll, "u1")
-                    else pool.randomOrNull() ?: LESSONS.first()
-                    LessonScreen(store, speaker, speechEnv, lesson) { go(Route.Practice) }
-                }
+                Route.Review -> ReviewScreen(store, speaker) { go(Route.Practice) }
             }
             }
         }

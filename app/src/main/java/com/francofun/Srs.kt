@@ -51,6 +51,57 @@ fun qualityFor(correct: Boolean, fuzzyScore: Double = 1.0): Int = when {
     else -> 3
 }
 
+/** Self-rated review grades (FSRS-style UX: Again / Hard / Good / Easy). */
+enum class ReviewRating(val label: String, val emoji: String) {
+    AGAIN("Again", "🔴"),
+    HARD("Hard", "🟠"),
+    GOOD("Good", "🔵"),
+    EASY("Easy", "🟢")
+}
+
+/**
+ * Apply a self-rating to an SRS item.
+ * Again → back to box 1, due today (re-queue). Hard → stay in box, half interval.
+ * Good → up one box. Easy → up two boxes (capped at 5).
+ */
+fun applyReview(
+    prev: SrsItem,
+    rating: ReviewRating,
+    today: Long = LocalDate.now().toEpochDay()
+): SrsItem = when (rating) {
+    ReviewRating.AGAIN -> SrsItem(1, today)
+    ReviewRating.HARD -> {
+        val b = prev.box.coerceIn(1, 5)
+        SrsItem(b, today + maxOf(1, daysForBox(b) / 2))
+    }
+    ReviewRating.GOOD -> {
+        val b = (prev.box + 1).coerceAtMost(5)
+        SrsItem(b, today + daysForBox(b))
+    }
+    ReviewRating.EASY -> {
+        val b = (prev.box + 2).coerceAtMost(5)
+        SrsItem(b, today + daysForBox(b))
+    }
+}
+
+/** Days until due after applying [rating] — shown on the review buttons. */
+fun previewIntervalDays(
+    prev: SrsItem,
+    rating: ReviewRating,
+    today: Long = LocalDate.now().toEpochDay()
+): Int = (applyReview(prev, rating, today).dueEpochDay - today).toInt().coerceAtLeast(0)
+
+/** Human label for an interval: 0 = "today", 1 = "1 day", n = "n days". */
+fun intervalLabel(days: Int): String = when (days) {
+    0 -> "today"
+    1 -> "1 day"
+    else -> "$days days"
+}
+
+/** Memory strength 0..1 from Leitner box — powers the retention meter. */
+fun retentionScore(item: SrsItem?): Float =
+    if (item == null) 0f else (item.box.coerceIn(1, 5) - 1) / 4f
+
 /** CEFR rank for the §6.4 difficulty gate. Unknown tags sort as hardest. */
 fun levelRank(level: String): Int = when (level.uppercase()) {
     "A1" -> 0

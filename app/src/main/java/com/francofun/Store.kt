@@ -337,6 +337,30 @@ class Store(ctx: Context) {
         saveSrs()
     }
 
+    /**
+     * Dedicated review session grade (Again/Hard/Good/Easy). Always counts toward
+     * the daily review quest. Returns XP earned (boost-aware).
+     */
+    fun recordReview(key: String, rating: ReviewRating): Int {
+        rollDay()
+        touchStreak()
+        val prev = srs[key] ?: SrsItem()
+        srs[key] = applyReview(prev, rating)
+        todayReview += 1
+        val base = when (rating) {
+            ReviewRating.AGAIN -> 1
+            ReviewRating.HARD -> 2
+            ReviewRating.GOOD -> 3
+            ReviewRating.EASY -> 4
+        }
+        val gain = base * (if (xpBoostActive) 2 else 1)
+        xp += gain; todayXp += gain
+        sp.edit().putInt(dayKey("drv"), todayReview)
+            .putInt("xp", xp).putInt(dayKey("dxp"), todayXp).apply()
+        checkBadges()
+        return gain
+    }
+
     /** Phrases answered correctly at least once (Leitner box 2+). */
     fun wordsLearnedCount(): Int = srs.count { it.value.box >= 2 }
 
