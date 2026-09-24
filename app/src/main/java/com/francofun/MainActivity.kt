@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -97,9 +99,12 @@ fun App(store: Store) {
     // §8: in-app text size scales fonts only (dp layout untouched).
     val baseDensity = LocalDensity.current
     val scaled = Density(baseDensity.density, fontScale = baseDensity.fontScale * store.textScale)
+    // §Phase 10: short route crossfade; honors system reduce-motion.
+    val motionMs = if (animationsOff(ctx)) 0 else 220
     CompositionLocalProvider(LocalDensity provides scaled) {
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).systemBarsPadding()) {
-        when (val r = route) {
+        Crossfade(targetState = route, animationSpec = tween(motionMs), label = "route") { r ->
+        when (r) {
             Route.Onboarding -> OnboardingScreen(store) { route = Route.Home }
             Route.Home -> HomeScreen(
                 store,
@@ -143,6 +148,7 @@ fun App(store: Store) {
                 LessonScreen(store, speaker, speechEnv, lesson) { route = Route.Home }
             }
         }
+        }
     }
     }
 }
@@ -156,6 +162,7 @@ private fun SetupScreen(onDone: () -> Unit) {
         ModelInstaller.install(ctx) { progress = it }
         onDone()
     }
+    PhotoBg(R.drawable.bg_offline) {
     Column(
         Modifier.fillMaxSize().padding(32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -175,7 +182,8 @@ private fun SetupScreen(onDone: () -> Unit) {
         Spacer(Modifier.height(24.dp))
         LinearProgressIndicator(
             progress = { progress.fraction },
-            modifier = Modifier.fillMaxWidth().height(10.dp).clip(RoundedCornerShape(50))
+            modifier = Modifier.fillMaxWidth().height(10.dp).clip(Rad.pill)
         )
+    }
     }
 }

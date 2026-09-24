@@ -86,6 +86,7 @@ fun LessonScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, lesson: L
     when {
         outOfHearts -> OutOfHearts(store.helpLang, onExit)
         done == null -> Quiz(store, speaker, speechEnv, questions, onExit,
+            bgRes = if (lesson.id == "review") R.drawable.bg_srs else R.drawable.bg_lesson,
             onFinish = { correct, speak -> finishedCorrect = correct; speakOk = speak },
             onOutOfHearts = { outOfHearts = true }
         )
@@ -101,7 +102,7 @@ fun LessonScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, lesson: L
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions: List<Question>, onExit: () -> Unit, onFinish: (Int, Int) -> Unit, onOutOfHearts: () -> Unit) {
+private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions: List<Question>, onExit: () -> Unit, bgRes: Int = R.drawable.bg_lesson, onFinish: (Int, Int) -> Unit, onOutOfHearts: () -> Unit) {
     val lang = store.helpLang
     val ctx = LocalContext.current
     var idx by remember { mutableIntStateOf(0) }
@@ -180,7 +181,7 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
         }
 
         key(idx) {
-            PhotoBg(R.drawable.bg_lesson, modifier = Modifier.weight(1f).fillMaxWidth()) {
+            PhotoBg(bgRes, modifier = Modifier.weight(1f).fillMaxWidth()) {
             Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
                 when (q.type) {
                     QType.FR_TO_MEANING -> {
