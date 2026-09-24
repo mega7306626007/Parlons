@@ -166,19 +166,20 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
     }
 
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("✕", fontSize = 24.sp, modifier = Modifier.clickable(onClick = onExit).padding(end = 12.dp))
+        Row(Modifier.padding(horizontal = Sp.md, vertical = Sp.sm), verticalAlignment = Alignment.CenterVertically) {
+            Text("✕", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onExit).padding(end = Sp.sm).semantics { contentDescription = "Exit lesson"; role = Role.Button })
             LinearProgressIndicator(
                 progress = { (idx + if (result != null) 1 else 0) / questions.size.toFloat() },
-                modifier = Modifier.weight(1f).height(10.dp).clip(RoundedCornerShape(50)),
-                color = Green
+                modifier = Modifier.weight(1f).height(10.dp).clip(R.pill),
+                color = Green,
+                trackColor = Color(0xFFE3E7F2)
             )
-            if (combo >= 2) Text("  🔥$combo", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-            Text("  ❤️${store.hearts}", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            if (combo >= 2) Text("  🔥$combo", style = T.bodySemi, color = Gold)
+            Text("  ❤️${store.hearts}", style = T.bodySemi, color = Red)
         }
 
         key(idx) {
-            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = 20.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+            Column(Modifier.weight(1f).fillMaxWidth().verticalScroll(rememberScrollState()).padding(horizontal = Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
                 when (q.type) {
                     QType.FR_TO_MEANING -> {
                         Prompt("What does this mean?")
@@ -197,16 +198,16 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
                     }
                     QType.MEANING_TO_FR -> {
                         Prompt("How do you say this in French?")
-                        Text(q.phrase.meaning(lang), fontSize = 26.sp, fontWeight = FontWeight.ExtraBold)
+                        Text(q.phrase.meaning(lang), style = T.display, color = Ink)
                         Options(q, chosen, result) { chosen = it; speaker.speak(it) }
                     }
                     QType.ORDER -> {
                         Prompt("Build the sentence in French")
-                        Text(q.phrase.meaning(lang), fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                        FlowRow(Modifier.fillMaxWidth().heightIn(min = 72.dp).clip(RoundedCornerShape(14.dp)).background(Color.White).padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(q.phrase.meaning(lang), style = T.section, color = Ink)
+                        FlowRow(Modifier.fillMaxWidth().heightIn(min = 72.dp).clip(R.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), R.xl).padding(Sp.sm), horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
                             used.toList().forEach { wi -> WordChip(q.words[wi], false) { if (result == null) used.removeAll { it == wi } } }
                         }
-                        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
                             q.words.forEachIndexed { i, w ->
                                 val taken = i in used
                                 WordChip(w, taken) { if (result == null && !taken) used.add(i) }
@@ -216,17 +217,18 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
                     QType.SPEAK -> {
                         Prompt("Say it out loud!")
                         BigPhrase(q.phrase.fr) { speaker.speak(q.phrase.fr) }
-                        Text(q.phrase.meaning(lang), fontSize = 16.sp, color = Color(0xFF6B7280))
+                        Text(q.phrase.meaning(lang), style = T.secondary, color = InkSoft)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                             Box(Modifier.size(88.dp).clip(CircleShape).background(if (mic.listening) Red else Blue).semantics { contentDescription = "Record your voice"; role = Role.Button }.clickable(enabled = result == null) { mic.press() }, contentAlignment = Alignment.Center) { Text("🎤", fontSize = 38.sp) }
                         }
-                        Text(when { mic.listening -> "Listening…"; heard.isNotEmpty() -> "I heard: $heard"; else -> "Tap the mic and speak" }, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, color = Color(0xFF444B5E))
+                        if (mic.listening) VoiceWaveform(active = true, color = Blue, modifier = Modifier.fillMaxWidth().padding(horizontal = Sp.xl))
+                        Text(when { mic.listening -> "Listening…"; heard.isNotEmpty() -> "I heard: $heard"; else -> "Tap the mic and speak" }, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center, style = T.secondary)
                         if (result == null) TextButton(onClick = { combo = 0; next() }, modifier = Modifier.fillMaxWidth()) { Text("Can't speak right now, skip") }
                     }
                     QType.CLOZE -> {
                         Prompt("Fill in the blank")
-                        Text(q.clozeDisplay, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold)
-                        Text(q.phrase.meaning(lang), fontSize = 16.sp, color = Color(0xFF6B7280))
+                        Text(q.clozeDisplay, style = T.display, color = Ink)
+                        Text(q.phrase.meaning(lang), style = T.secondary, color = InkSoft)
                         Options(Question(q.type, q.phrase, q.options, q.answer), chosen, result) { chosen = it }
                     }
                     QType.MATCH -> {
@@ -258,19 +260,19 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
                                 }
                             }
                         }
-                        if (matchErrors > 0) Text("Mistakes: $matchErrors — keep going!", color = Color(0xFFB3261E))
+                        if (matchErrors > 0) Text("Mistakes: $matchErrors — keep going!", style = T.secondary, color = Red)
                     }
                     QType.TYPE -> {
                         Prompt("Type it in French")
-                        Text(q.phrase.meaning(lang), fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                        Text(q.phrase.meaning(lang), style = T.section, color = Ink)
                         BigPhrase(q.phrase.fr.takeIf { result != null } ?: "••• 🤫 •••") { speaker.speak(q.phrase.fr) }
-                        OutlinedTextField(value = typed, onValueChange = { typed = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Écris en français…") }, singleLine = true, enabled = result == null)
+                        OutlinedTextField(value = typed, onValueChange = { typed = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Écris en français…") }, singleLine = true, enabled = result == null, shape = R.xl)
                         AccentRow { typed += it }
                     }
                     QType.CONJUGATE -> {
                         Prompt("Conjugate: ${q.verb} — ${q.pronoun} ___")
-                        Text(q.hint, fontSize = 16.sp, color = Color(0xFF6B7280))
-                        OutlinedTextField(value = typed, onValueChange = { typed = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("e.g. suis") }, singleLine = true, enabled = result == null)
+                        Text(q.hint, style = T.secondary, color = InkSoft)
+                        OutlinedTextField(value = typed, onValueChange = { typed = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("e.g. suis") }, singleLine = true, enabled = result == null, shape = R.xl)
                     }
                     QType.DICTATION -> {
                         Prompt("Listen and type what you hear")
@@ -280,12 +282,12 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
                             Spacer(Modifier.size(16.dp))
                             RoundButton("🐢", Color(0xFF7A8AB8)) { speaker.speak(q.answer, slow = true) }
                         }
-                        OutlinedTextField(value = typed, onValueChange = { typed = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Écris ce que tu entends…") }, singleLine = true, enabled = result == null)
+                        OutlinedTextField(value = typed, onValueChange = { typed = it }, modifier = Modifier.fillMaxWidth(), placeholder = { Text("Écris ce que tu entends…") }, singleLine = true, enabled = result == null, shape = R.xl)
                         AccentRow { typed += it }
                     }
                     QType.MINIMAL_PAIR -> {
                         Prompt("Which one did you hear?")
-                        Text(q.hint, fontSize = 16.sp, color = Color(0xFF6B7280))
+                        Text(q.hint, style = T.secondary, color = InkSoft)
                         LaunchedEffect(idx) { if (store.autoSpeak) speaker.speak(q.answer) }
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                             RoundButton("🔊", Blue) { speaker.speak(q.answer) }
@@ -299,10 +301,10 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
                             RoundButton("🔊", Blue) { q.replayLines.forEach { speaker.speak(it) } }
                         }
-                        FlowRow(Modifier.fillMaxWidth().heightIn(min = 72.dp).clip(RoundedCornerShape(14.dp)).background(Color.White).padding(10.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(Modifier.fillMaxWidth().heightIn(min = 72.dp).clip(R.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), R.xl).padding(Sp.sm), horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
                             used.toList().forEach { wi -> WordChip(q.words[wi], false) { if (result == null) used.removeAll { it == wi } } }
                         }
-                        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Sp.xs), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
                             q.words.forEachIndexed { i, w ->
                                 val taken = i in used
                                 WordChip(w, taken) { if (result == null && !taken) used.add(i) }
@@ -311,19 +313,19 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
                     }
                     QType.STORY -> {
                         Prompt("📖 ${q.hint}")
-                        Text(q.storyText, fontSize = 16.sp, color = Color(0xFF1F2937))
-                        Text(q.storyQuestion, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                        Text(q.storyText, style = T.body, color = Ink)
+                        Text(q.storyQuestion, style = T.section, color = Ink)
                         Options(q, chosen, result) { chosen = it }
                     }
                 }
             }
         }
 
-        val bg = when (result) { true -> Color(0xFFD7F5D3); false -> Color(0xFFFFDAD6); null -> Color.Transparent }
-        Column(Modifier.fillMaxWidth().background(bg).padding(16.dp)) {
+        val bg = when (result) { true -> GreenLight; false -> RedLight; null -> Color.Transparent }
+        Column(Modifier.fillMaxWidth().background(bg).padding(Sp.md)) {
             if (result != null) {
-                Text(feedback, fontWeight = FontWeight.ExtraBold, fontSize = 18.sp, color = if (result == true) Color(0xFF1B7A2F) else Color(0xFFB3261E))
-                Text(detail, fontSize = 14.sp, color = Color(0xFF333333), modifier = Modifier.padding(top = 4.dp, bottom = 10.dp))
+                Text(feedback, style = T.section, color = if (result == true) Green else Red)
+                Text(detail, style = T.secondary, color = InkSoft, modifier = Modifier.padding(top = Sp.xs, bottom = Sp.sm))
                 BigButton(if (last) "FINISH" else "CONTINUE", onClick = { next() }, color = if (result == true) Green else Red)
             } else if (q.type != QType.SPEAK && q.type != QType.MATCH) {
                 val can = when (q.type) {
@@ -366,24 +368,24 @@ private fun Options(q: Question, chosen: String?, result: Boolean?, onPick: (Str
                 else -> OptState.IDLE
             }
             val (bg, border) = when (st) {
-                OptState.IDLE -> Color.White to Color(0xFFD0D5E0)
-                OptState.SELECTED -> Color(0xFFE3EBFF) to Blue
-                OptState.CORRECT -> Color(0xFFD7F5D3) to Green
-                OptState.WRONG -> Color(0xFFFFDAD6) to Red
+                OptState.IDLE -> Surface to Color(0xFFD0D5E0)
+                OptState.SELECTED -> BlueLight to Blue
+                OptState.CORRECT -> GreenLight to Green
+                OptState.WRONG -> RedLight to Red
             }
-            Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(16.dp)).background(bg).border(2.dp, border, RoundedCornerShape(16.dp)).semantics(mergeDescendants = true) { contentDescription = opt; role = Role.RadioButton }.clickable(enabled = result == null) { onPick(opt) }.padding(16.dp)) { Text(opt, fontSize = 17.sp, fontWeight = FontWeight.SemiBold) }
+            Box(Modifier.fillMaxWidth().clip(R.xl).background(bg).border(2.dp, border, R.xl).semantics(mergeDescendants = true) { contentDescription = opt; role = Role.RadioButton }.clickable(enabled = result == null) { onPick(opt) }.heightIn(min = 48.dp).padding(Sp.md)) { Text(opt, style = T.bodySemi, color = Ink) }
         }
     }
 }
 
 @Composable
-private fun Prompt(text: String) { Text(text, fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1F2937), modifier = Modifier.padding(top = 8.dp)) }
+private fun Prompt(text: String) { Text(text, style = T.section, color = Ink, modifier = Modifier.padding(top = Sp.sm)) }
 
 @Composable
 private fun BigPhrase(text: String, onSpeak: () -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Text("🔊", fontSize = 30.sp, modifier = Modifier.clickable(onClick = onSpeak).padding(end = 12.dp))
-        Text(text, fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = Blue)
+        Text("🔊", fontSize = 30.sp, modifier = Modifier.clickable(onClick = onSpeak).padding(end = Sp.sm).semantics { contentDescription = "Play audio"; role = Role.Button })
+        Text(text, style = T.display, color = Blue)
     }
 }
 
@@ -394,16 +396,15 @@ private fun RoundButton(label: String, color: Color, onClick: () -> Unit) {
 
 @Composable
 private fun WordChip(text: String, faded: Boolean, onClick: () -> Unit) {
-    val shape = RoundedCornerShape(12.dp)
-    Box(Modifier.alpha(if (faded) 0.25f else 1f).clip(shape).background(Color.White).border(2.dp, Color(0xFFD0D5E0), shape).semantics(mergeDescendants = true) { contentDescription = text; role = Role.Button }.clickable(onClick = onClick).heightIn(min = 48.dp).padding(horizontal = 14.dp, vertical = 10.dp)) { Text(text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold) }
+    Box(Modifier.alpha(if (faded) 0.25f else 1f).clip(R.lg).background(Surface).border(2.dp, Color(0xFFD0D5E0), R.lg).semantics(mergeDescendants = true) { contentDescription = text; role = Role.Button }.clickable(onClick = onClick).heightIn(min = 48.dp).padding(horizontal = Sp.md, vertical = Sp.sm)) { Text(text, style = T.bodySemi, color = Ink) }
 }
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun AccentRow(onAccent: (String) -> Unit) {
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(Sp.xs)) {
         listOf("é", "è", "ê", "à", "ç", "î", "ô", "û", "’").forEach { a ->
-            Box(Modifier.clip(RoundedCornerShape(10.dp)).background(Color(0xFFE8EEFF)).clickable { onAccent(a) }.padding(horizontal = 12.dp, vertical = 8.dp)) { Text(a, fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Blue) }
+            Box(Modifier.clip(R.md).background(BlueLight).clickable { onAccent(a) }.heightIn(min = 48.dp).padding(horizontal = Sp.sm, vertical = Sp.xs)) { Text(a, style = T.bodySemi, color = Blue) }
         }
     }
 }
@@ -411,24 +412,24 @@ private fun AccentRow(onAccent: (String) -> Unit) {
 @Composable
 private fun OutOfHearts(lang: HelpLang, onExit: () -> Unit) {
     Column(
-        Modifier.fillMaxSize().padding(24.dp),
+        Modifier.fillMaxSize().padding(Sp.xxl),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Text("💔", fontSize = 80.sp)
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.padding(Sp.sm))
         Text(
             lang.t("Out of hearts!", "Umeisha mioyo!", "Umeisha hearts!"),
-            fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Red, textAlign = TextAlign.Center
+            style = T.screenTitle, color = Red, textAlign = TextAlign.Center
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.padding(Sp.xs))
         Text(
             lang.t("Hearts refill from Settings using gems, or just come back and try again.",
                 "Mioyo inajazwa tena kutoka Mipangilio kwa kutumia vito, au rudi tena baadaye.",
                 "Hearts zinajazwa tena kutoka Settings na gems, au rudi tena baadaye."),
-            fontSize = 15.sp, textAlign = TextAlign.Center, color = Color(0xFF6B7280)
+            style = T.secondary, textAlign = TextAlign.Center, color = InkSoft
         )
-        Spacer(Modifier.height(32.dp))
+        Spacer(Modifier.padding(Sp.xxl))
         BigButton(lang.t("Back to path", "Rudi", "Rudi"), onClick = onExit, color = Red)
     }
 }
@@ -438,23 +439,22 @@ private fun Finished(store: Store, correct: Int, total: Int, xp: Int, gems: Int,
     val perfect = correct == total
     val ctx = LocalContext.current
     if (perfect) { Sounds.fanfare(store.soundOn); if (!animationsOff(ctx)) ConfettiOverlay(true) }
-    Column(Modifier.fillMaxSize().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+    Column(Modifier.fillMaxSize().padding(Sp.xxl), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         Text(if (perfect) "🏆" else "🎉", fontSize = 80.sp)
-        Spacer(Modifier.height(12.dp))
-        Text(when (store.helpLang) { HelpLang.ENGLISH -> "Lesson complete!"; HelpLang.SWAHILI -> "Hongera! Umemaliza somo!"; HelpLang.SHENG -> "Umemaliza msee! Uko kali!" }, fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, color = Blue, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(8.dp))
-        Text("$correct / $total correct", fontSize = 20.sp)
+        Spacer(Modifier.padding(Sp.sm))
+        Text(when (store.helpLang) { HelpLang.ENGLISH -> "Lesson complete!"; HelpLang.SWAHILI -> "Hongera! Umemaliza somo!"; HelpLang.SHENG -> "Umemaliza msee! Uko kali!" }, style = T.screenTitle, color = Blue, textAlign = TextAlign.Center)
+        Spacer(Modifier.padding(Sp.xs))
+        Text("$correct / $total correct", style = T.section)
         if (!perfect) {
-            // Simba's personality: every imperfect lesson ends with a gentle vanne + love.
             val (vfr, vhelp) = remember { simbaVanne(store.helpLang) }
-            Spacer(Modifier.height(4.dp))
-            Text(vfr, fontSize = 15.sp, textAlign = TextAlign.Center)
-            if (vhelp.isNotBlank()) Text(vhelp, fontSize = 13.sp, color = Color.Gray, textAlign = TextAlign.Center)
+            Spacer(Modifier.padding(Sp.xxs))
+            Text(vfr, style = T.secondary, textAlign = TextAlign.Center)
+            if (vhelp.isNotBlank()) Text(vhelp, style = T.caption, textAlign = TextAlign.Center)
         }
-        Text("+$xp XP ⭐   +$gems 💎", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Gold)
+        Text("+$xp XP ⭐   +$gems 💎", style = T.number, color = Gold)
         val (into, need) = xpIntoLevel(store.xp)
-        Text("Level ${levelForXp(store.xp)} ${levelTitle(levelForXp(store.xp))} • $into/$need XP", fontSize = 14.sp, color = Color.Gray)
-        Spacer(Modifier.height(32.dp))
+        Text("Level ${levelForXp(store.xp)} ${levelTitle(levelForXp(store.xp))} • $into/$need XP", style = T.caption)
+        Spacer(Modifier.padding(Sp.xxl))
         BigButton("CONTINUE", onClick = onDone)
     }
 }
