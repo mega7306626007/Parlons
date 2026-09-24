@@ -3,6 +3,7 @@ package com.francofun
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -57,6 +58,38 @@ class Store(ctx: Context) {
         private set
     var reminderOn by mutableStateOf(sp.getBoolean("remOn", false))
         private set
+
+    // ── Gamification power-ups (research-driven) ──
+    /** Streak freezes: each covers one missed day. Bought with gems. */
+    var streakFreezes by mutableIntStateOf(sp.getInt("freezes", 0))
+        private set
+
+    /** 2× XP window end (epoch ms). 0 = inactive. */
+    var xpBoostUntil by mutableLongStateOf(sp.getLong("boostUntil", 0L))
+        private set
+
+    val xpBoostActive: Boolean get() = System.currentTimeMillis() < xpBoostUntil
+    val xpBoostMsLeft: Long get() = (xpBoostUntil - System.currentTimeMillis()).coerceAtLeast(0L)
+
+    /** Last 30 days of activity (epoch days) for the streak calendar. */
+    private val activeDaySet = mutableSetOf<Long>().apply {
+        sp.getString("activeDays", "")?.split(",")?.forEach { s ->
+            s.toLongOrNull()?.let { add(it) }
+        }
+    }
+
+    private fun markActive(day: Long = LocalDate.now().toEpochDay()) {
+        activeDaySet.add(day)
+        val cutoff = day - 30
+        activeDaySet.retainAll { it >= cutoff }
+        sp.edit().putString("activeDays", activeDaySet.joinToString(",")).apply()
+    }
+
+    /** Last 7 days (oldest→today): was the learner active? Powers the streak calendar. */
+    fun last7DaysActivity(): List<Boolean> {
+        val today = LocalDate.now().toEpochDay()
+        return (6 downTo 0).map { (today - it) in activeDaySet }
+    }
 
     val stars = mutableStateMapOf<String, Int>().apply {
         allLessons().forEach { l ->
@@ -126,11 +159,67 @@ class Store(ctx: Context) {
 
     fun touchStreak() {
         val today = LocalDate.now().toEpochDay()
+        markActive(today)
         if (lastDay == today) return
-        streak = if (lastDay == today - 1) streak + 1 else 1
+        val gap = if (lastDay < 0) Int.MAX_VALUE else (today - lastDay).toInt()
+        streak = when {
+            gap == 1 -> streak + 1
+            // Exactly one missed day + a freeze in stock → streak survives.
+            gap == 2 && streakFreezes > 0 && streak > 0 -> {
+                streakFreezes -= 1
+                streak + 1
+            }
+            else -> 1
+        }
         lastDay = today
-        sp.edit().putInt("streak", streak).putLong("lastDay", lastDay).apply()
+        sp.edit().putInt("streak", streak).putLong("lastDay", lastDay)
+            .putInt("freezes", streakFreezes).apply()
         checkBadges()
+    }
+
+    /** Buy one streak freeze (covers a single missed day). */
+    fun buyStreakFreeze(cost: Int = 15): Boolean {
+        if (gems < cost) return false
+        gems -= cost
+        streakFreezes += 1
+        sp.edit().putInt("gems", gems).putInt("freezes", streakFreezes).apply()
+        return true
+    }
+
+    /** Activate a 2× XP boost. Extends if one is already running. */
+    fun buyXpBoost(cost: Int = 30, durationMs: Long = 15L * 60L * 1000L): Boolean {
+        if (gems < cost) return false
+        gems -= cost
+        val base = maxOf(xpBoostUntil, System.currentTimeMillis())
+        xpBoostUntil = base + durationMs
+        sp.edit().putInt("gems", gems).putLong("boostUntil", xpBoostUntil).apply()
+        return true
+    }
+
+    /** Early-bird / night-owl chests: claimable once per day inside a time window. */
+    fun chestClaimed(kind: String): Boolean =
+        sp.getBoolean("chest_${kind}_${LocalDate.now().toEpochDay()}", false)
+
+    fun chestAvailable(kind: String): Boolean {
+        if (chestClaimed(kind)) return false
+        val h = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        return when (kind) {
+            "early" -> h in 5..9
+            "night" -> h >= 21 || h < 3
+            else -> false
+        }
+    }
+
+    /** Returns (xp, gems) granted, or (0, 0) if unavailable/already claimed. */
+    fun claimChest(kind: String): Pair<Int, Int> {
+        if (!chestAvailable(kind)) return 0 to 0
+        val (xpG, gemsG) = if (kind == "early") 25 to 5 else 35 to 8
+        rollDay()
+        xp += xpG; todayXp += xpG; gems += gemsG
+        sp.edit().putBoolean("chest_${kind}_${LocalDate.now().toEpochDay()}", true)
+            .putInt("xp", xp).putInt("gems", gems).putInt(dayKey("dxp"), todayXp).apply()
+        checkBadges()
+        return xpG to gemsG
     }
 
     fun loseHeart(): Boolean {
@@ -175,7 +264,8 @@ class Store(ctx: Context) {
     fun finishLesson(id: String, correct: Int, total: Int, speakOk: Int = 0, reviewed: Int = 0): Pair<Int, Int> {
         rollDay()
         touchStreak()
-        val gained = correct * 10 + if (correct == total && total > 0) 20 else 0
+        val boost = if (xpBoostActive) 2 else 1
+        val gained = (correct * 10 + if (correct == total && total > 0) 20 else 0) * boost
         val gainedGems = correct + if (correct == total && total > 0) 5 else 0
         xp += gained
         gems += gainedGems
@@ -222,7 +312,8 @@ class Store(ctx: Context) {
     fun finishSpeed(correct: Int, total: Int, bestCombo: Int): Int {
         rollDay()
         touchStreak()
-        val gained = correct * 2 + bestCombo
+        val boost = if (xpBoostActive) 2 else 1
+        val gained = (correct * 2 + bestCombo) * boost
         xp += gained
         todayXp += gained
         sp.edit().putInt("xp", xp).putInt(dayKey("dxp"), todayXp).apply()
@@ -230,8 +321,10 @@ class Store(ctx: Context) {
         return gained
     }
 
-    fun addChatXp(n: Int = 2) {        rollDay()
-        xp += n; todayXp += n; todayChat += 1; chatMsgsTotal += 1
+    fun addChatXp(n: Int = 2) {
+        rollDay()
+        val gain = n * (if (xpBoostActive) 2 else 1)
+        xp += gain; todayXp += gain; todayChat += 1; chatMsgsTotal += 1
         sp.edit().putInt("xp", xp).putInt(dayKey("dxp"), todayXp)
             .putInt(dayKey("dch"), todayChat).putInt("chatN", chatMsgsTotal).apply()
         checkBadges()
@@ -331,6 +424,9 @@ class Store(ctx: Context) {
                 k.startsWith("dch_") || k.startsWith("drv_")
         }.forEach { e.remove(it) }
         e.remove("lastHeartTs").remove("dailyDay")
+        streakFreezes = 0; xpBoostUntil = 0L; activeDaySet.clear()
+        keys.filter { k -> k.startsWith("chest_") }.forEach { e.remove(it) }
+        e.remove("activeDays").remove("freezes").remove("boostUntil")
         e.putInt("xp", 0).putInt("gems", START_GEMS).putInt("hearts", MAX_HEARTS).putInt("streak", 0).putLong("lastDay", -1L)
             .putInt("lessonsDone", 0).putInt("perfect", 0).putInt("speakOk", 0).putInt("chatN", 0)
             .putString("srs", "{}").apply()

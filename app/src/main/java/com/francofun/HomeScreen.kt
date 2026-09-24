@@ -35,6 +35,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import java.time.LocalDate
 
 /* ═══════════ HOME TAB — open layout, one primary action ═══════════ */
 
@@ -60,6 +61,8 @@ fun HomeTab(
             item { HeaderRow(store, onProfile) }
             item { Greeting(lang) }
             item { ProgressCard(store, into, need) }
+            item { StreakCalendarCard(store) }
+            item { PowerUpsCard(store) }
             item { LangChips(store) }
             item {
                 HeroCard(color = Cobalt, onClick = onChat) {
@@ -100,6 +103,8 @@ private fun HeaderRow(store: Store, onProfile: () -> Unit) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text("Parlons", style = T.screenTitle, color = Cobalt, modifier = Modifier.weight(1f))
         BadgeCount("🔥", store.streak)
+        if (store.streakFreezes > 0) BadgeCount("🧊", store.streakFreezes)
+        if (store.xpBoostActive) BadgeCount("⚡", 2)
         BadgeCount("⭐", store.xp)
         BadgeCount("💎", store.gems)
         Text(
@@ -159,6 +164,187 @@ private fun ReviewBanner(dueN: Int, onPractice: () -> Unit) {
             }
             Text("→", style = T.section, color = Ink)
         }
+    }
+}
+
+/* ── Streak calendar: last 7 days (research: glanceable consistency) ── */
+
+@Composable
+private fun StreakCalendarCard(store: Store) {
+    val days = store.last7DaysActivity()
+    val today = java.time.LocalDate.now()
+    Card {
+        Column {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("🔥 ${store.streak}-day streak", style = T.bodySemi, color = Ink, modifier = Modifier.weight(1f))
+                if (store.streakFreezes > 0) {
+                    Text("🧊 ×${store.streakFreezes}", style = T.caption, color = Cobalt)
+                }
+            }
+            Spacer(Modifier.padding(Sp.xs))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                days.forEachIndexed { i, active ->
+                    val date = today.minusDays((6 - i).toLong())
+                    val letter = date.dayOfWeek.name.take(1).lowercase().replaceFirstChar { it.uppercase() }
+                    val isToday = i == 6
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    when {
+                                        active && isToday -> Gold
+                                        active -> Emerald
+                                        isToday -> CobaltSoft
+                                        else -> Border
+                                    }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                if (active) "🔥" else letter,
+                                fontSize = if (active) 14.sp else 11.sp,
+                                color = if (active) White else if (isToday) Cobalt else InkMuted
+                            )
+                        }
+                        if (isToday) {
+                            Text("now", style = T.caption, color = InkMuted)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/* ── Power-ups + time chests (research: streak freeze, early/night rewards) ── */
+
+@Composable
+private fun PowerUpsCard(store: Store) {
+    var msg by remember { mutableStateOf<String?>(null) }
+
+    Card {
+        Column(verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+            SectionHeader("⚡ Power-ups & chests")
+
+            if (store.xpBoostActive) {
+                val mins = (store.xpBoostMsLeft / 60_000L).toInt() + 1
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text("⚡", fontSize = 18.sp)
+                    Spacer(Modifier.padding(Sp.sm))
+                    Text(
+                        "2× XP active — ${mins}m left",
+                        style = T.body, color = Violet, modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            // Early-bird chest
+            ChestRow(
+                icon = "🌅",
+                title = "Early-bird chest",
+                sub = "Claim before 10am · +25 XP · +5💎",
+                claimed = store.chestClaimed("early"),
+                available = store.chestAvailable("early")
+            ) {
+                val (xp, gems) = store.claimChest("early")
+                msg = if (xp > 0) "🌅 Chest opened! +$xp XP +$gems💎" else "Not available right now (5–9am)"
+            }
+
+            // Night-owl chest
+            ChestRow(
+                icon = "🌙",
+                title = "Night-owl chest",
+                sub = "Claim 9pm–3am · +35 XP · +8💎",
+                claimed = store.chestClaimed("night"),
+                available = store.chestAvailable("night")
+            ) {
+                val (xp, gems) = store.claimChest("night")
+                msg = if (xp > 0) "🌙 Chest opened! +$xp XP +$gems💎" else "Not available right now (9pm–3am)"
+            }
+
+            Divider()
+
+            // Buy actions
+            Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), modifier = Modifier.fillMaxWidth()) {
+                BuyChip(
+                    label = "🧊 Freeze · 15💎",
+                    sub = "Protects 1 missed day",
+                    enabled = store.gems >= 15,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    msg = if (store.buyStreakFreeze()) "🧊 Streak freeze bought!" else "Not enough gems"
+                }
+                BuyChip(
+                    label = "⚡ 2× XP · 30💎",
+                    sub = "15 minutes of double XP",
+                    enabled = store.gems >= 30,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    msg = if (store.buyXpBoost()) "⚡ 2× XP for 15 minutes!" else "Not enough gems"
+                }
+            }
+
+            msg?.let {
+                Text(it, style = T.caption, color = InkSoft)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChestRow(
+    icon: String,
+    title: String,
+    sub: String,
+    claimed: Boolean,
+    available: Boolean,
+    onClaim: () -> Unit
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier.size(40.dp).clip(Rad.md).background(GoldSoft),
+            contentAlignment = Alignment.Center
+        ) { Text(icon, fontSize = 20.sp) }
+        Spacer(Modifier.padding(Sp.sm))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = T.body, color = Ink)
+            Text(sub, style = T.caption, color = InkSoft)
+        }
+        when {
+            claimed -> Text("✓", style = T.label, color = Emerald)
+            available -> Box(
+                Modifier
+                    .clip(Rad.pill)
+                    .background(Gold)
+                    .clickable(onClick = onClaim)
+                    .padding(horizontal = Sp.sm, vertical = Sp.xs)
+                    .semantics { contentDescription = "Claim $title"; role = Role.Button }
+            ) { Text("Claim", style = T.label, color = Ink) }
+            else -> Text("Later", style = T.caption, color = InkMuted)
+        }
+    }
+}
+
+@Composable
+private fun BuyChip(label: String, sub: String, enabled: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    Column(
+        modifier
+            .clip(Rad.md)
+            .background(if (enabled) CobaltSoft else Surface)
+            .border(1.dp, if (enabled) Cobalt.copy(alpha = 0.4f) else Border, Rad.md)
+            .clickable(enabled = enabled, onClick = onClick)
+            .padding(Sp.sm)
+            .semantics { contentDescription = label; role = Role.Button },
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(label, style = T.label, color = if (enabled) Cobalt else InkMuted, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+        Text(sub, style = T.caption, color = InkSoft, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
     }
 }
 
@@ -446,6 +632,7 @@ fun ProfileTab(store: Store, onStats: () -> Unit, onSettings: () -> Unit) {
                     Column(verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
                             ProfileStat("🔥", "${store.streak}", "streak")
+                            ProfileStat("🧊", "${store.streakFreezes}", "freezes")
                             ProfileStat("⭐", "${store.xp}", "XP")
                             ProfileStat("💎", "${store.gems}", "gems")
                             ProfileStat("❤️", "${store.hearts}", "hearts")
