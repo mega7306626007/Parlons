@@ -26,7 +26,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -61,47 +64,47 @@ fun SettingsScreen(store: Store, speechDebug: String = "", onBack: () -> Unit) {
         }
     }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("←", fontSize = 26.sp, modifier = Modifier.clickable(onClick = onBack).padding(end = 14.dp))
-            Text(lang.t("Settings", "Mipangilio", "Settings"), fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Blue)
+            Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onBack).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
+            Text(lang.t("Settings", "Mipangilio", "Settings"), style = T.screenTitle, color = Blue)
         }
-        Text(lang.t("I explain things in", "Nitaeleza kwa", "Nitaeleza kwa"), fontWeight = FontWeight.Bold)
+        Text(lang.t("I explain things in", "Nitaeleza kwa", "Nitaeleza kwa"), style = T.bodySemi, color = Ink)
         LangChips(store)
-        Text(lang.t("Theme", "Mandhari", "Theme"), fontWeight = FontWeight.Bold)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(lang.t("Theme", "Mandhari", "Theme"), style = T.bodySemi, color = Ink)
+        Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs)) {
             Chip(lang.t("System", "Mfumo", "System"), store.followSystemTheme) { store.setFollowSystemTheme() }
             Chip(lang.t("Light", "Nuru", "Light"), !store.followSystemTheme && !store.darkMode) { store.setDark(false) }
             Chip(lang.t("Dark", "Giza", "Dark"), !store.followSystemTheme && store.darkMode) { store.setDark(true) }
         }
-        Text(lang.t("Text size", "Ukubwa wa maandishi", "Text size"), fontWeight = FontWeight.Bold)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(lang.t("Text size", "Ukubwa wa maandishi", "Text size"), style = T.bodySemi, color = Ink)
+        Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs)) {
             Chip(lang.t("Small", "Ndogo", "Small"), store.textScale == 0.85f) { store.updateTextScale(0.85f) }
             Chip(lang.t("Default", "Kawaida", "Default"), store.textScale == 1f) { store.updateTextScale(1f) }
             Chip(lang.t("Large", "Kubwa", "Large"), store.textScale == 1.15f) { store.updateTextScale(1.15f) }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) { Text("Sound effects", fontWeight = FontWeight.Bold); Text("Dings + fanfare 🎉", fontSize = 13.sp, color = Color.Gray) }
+            Column(Modifier.weight(1f)) { Text("Sound effects", style = T.bodySemi, color = Ink); Text("Dings + fanfare 🎉", style = T.caption) }
             Switch(checked = store.soundOn, onCheckedChange = { store.setSound(it) })
         }
-        Text("Daily goal: $goal XP", fontWeight = FontWeight.Bold)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("Daily goal: $goal XP", style = T.bodySemi, color = Ink)
+        Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs)) {
             listOf(30, 50, 100).forEach { g -> Chip("$g XP", goal == g) { goal = g; store.setGoal(g) } }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(lang.t("Read Simba's replies aloud", "Soma majibu ya Simba kwa sauti", "Soma majibu ya Simba kwa sauti"), modifier = Modifier.weight(1f))
+            Text(lang.t("Read Simba's replies aloud", "Soma majibu ya Simba kwa sauti", "Soma majibu ya Simba kwa sauti"), style = T.body, color = Ink, modifier = Modifier.weight(1f))
             Switch(checked = store.autoSpeak, onCheckedChange = { store.updateAutoSpeak(it) })
         }
         Column {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("❤️ ${lang.t("Hearts", "Mioyo", "Hearts")}: ${store.hearts} / ${store.maxHearts}", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                Text("💎 ${store.gems}", fontWeight = FontWeight.Bold)
+                Text("❤️ ${lang.t("Hearts", "Mioyo", "Hearts")}: ${store.hearts} / ${store.maxHearts}", style = T.bodySemi, color = Ink, modifier = Modifier.weight(1f))
+                Text("💎 ${store.gems}", style = T.bodySemi, color = Blue)
             }
             Text(
                 lang.t("Lose a heart on a wrong answer. Refill for 10 gems, earned by practising.",
                     "Unapoteza moyo ukikosea. Jaza tena kwa vito 10, unavyopata kwa kujizoeza.",
                     "Unapoteza heart ukikosea. Jaza tena na gems 10, unazopata kwa practice."),
-                fontSize = 13.sp, color = Color(0xFF6B7280)
+                style = T.caption
             )
             if (store.hearts < store.maxHearts) {
                 val mins = ((store.heartRegenIn() + 59_999) / 60_000).coerceAtLeast(1)
@@ -109,7 +112,7 @@ fun SettingsScreen(store: Store, speechDebug: String = "", onBack: () -> Unit) {
                     lang.t("+1 heart in ~$mins min — or refill now with gems.",
                         "+1 moyo baada ya dakika ~$mins — au jaza sasa na vito.",
                         "+1 heart in ~$mins min — ama jaza sahi na gems."),
-                    fontSize = 13.sp, color = Color(0xFF1B7A2F)
+                    style = T.caption, color = Green
                 )
             }
             BigButton(
@@ -123,7 +126,7 @@ fun SettingsScreen(store: Store, speechDebug: String = "", onBack: () -> Unit) {
             )
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) { Text("Daily reminder (${store.reminderHour}:00)", fontWeight = FontWeight.Bold); Text(lang.t("Keep your streak alive", "Endelea na mfululizo", "Usiharibu streak msee"), fontSize = 13.sp, color = Color.Gray) }
+            Column(Modifier.weight(1f)) { Text("Daily reminder (${store.reminderHour}:00)", style = T.bodySemi, color = Ink); Text(lang.t("Keep your streak alive", "Endelea na mfululizo", "Usiharibu streak msee"), style = T.caption) }
             Switch(checked = store.reminderOn, onCheckedChange = { on ->
                 if (on) {
                     if (Build.VERSION.SDK_INT >= 33 && !hasNotificationPermission(ctx)) {
@@ -134,7 +137,7 @@ fun SettingsScreen(store: Store, speechDebug: String = "", onBack: () -> Unit) {
                 } else { store.setReminder(false, store.reminderHour); cancelReminder(ctx) }
             })
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs)) {
             listOf(7, 12, 19, 21).forEach { h -> Chip("$h:00", store.reminderHour == h) { store.setReminder(store.reminderOn, h); if (store.reminderOn) scheduleDailyReminder(ctx, h) } }
         }
         Text(
@@ -143,24 +146,24 @@ fun SettingsScreen(store: Store, speechDebug: String = "", onBack: () -> Unit) {
                 "Parlons inafanya kazi kwenye simu yako pekee — hauhitaji akaunti, funguo ya API, au intaneti. Maendeleo yako yanahifadhiwa kwenye simu hii tu.",
                 "Parlons inafanya kazi kwa simu yako tu — hauhitaji akaunti, API key, ama net. Maendeleo yako yanahifadhiwa kwa simu hii tu."
             ),
-            fontSize = 13.sp, color = Color(0xFF6B7280)
+            style = T.caption
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) { Text("Developer: show speech engine", fontWeight = FontWeight.Bold); Text("Testing only (§9.4)", fontSize = 13.sp, color = Color.Gray) }
+            Column(Modifier.weight(1f)) { Text("Developer: show speech engine", style = T.bodySemi, color = Ink); Text("Testing only (§9.4)", style = T.caption) }
             Switch(checked = store.showEngine, onCheckedChange = { store.updateShowEngine(it) })
         }
         if (store.showEngine && speechDebug.isNotBlank()) {
-            Text(speechDebug, fontSize = 13.sp, color = Color(0xFF1B7A2F))
+            Text(speechDebug, style = T.caption, color = Green)
         }
         Text(
             lang.t("Backup (this phone only)", "Hifadhi (simu hii tu)", "Backup (simu hii tu)"),
-            fontWeight = FontWeight.Bold
+            style = T.bodySemi, color = Ink
         )
         Text(
             lang.t("Save your progress as a file, move it to a new phone yourself — no account, no cloud.",
                 "Hifadhi maendeleo kama faili, uhamishe mwenyewe — hakuna akaunti, hakuna wingu.",
                 "Save maendeleo kama file, uhamishe mwenyewe — hakuna account, hakuna cloud."),
-            fontSize = 13.sp, color = Color(0xFF6B7280)
+            style = T.caption
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             BigButton(lang.t("Export", "Hifadhi", "Export"), modifier = Modifier.weight(1f), onClick = {

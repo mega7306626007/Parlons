@@ -1,6 +1,7 @@
 package com.francofun
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,7 +22,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -43,34 +46,34 @@ fun WordBankScreen(store: Store, speaker: Speaker, onBack: () -> Unit) {
             }
             .sortedWith(compareBy({ it.second }, { it.first.fr }))
     }
-    Column(Modifier.fillMaxSize().padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(Modifier.fillMaxSize().padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("←", fontSize = 26.sp, modifier = Modifier.clickable(onClick = onBack).padding(end = 14.dp))
-            Text("📖 Word bank (${rows.size})", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold, color = Blue)
+            Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onBack).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
+            Text("📖 Word bank (${rows.size})", style = T.screenTitle, color = Blue)
         }
         OutlinedTextField(
             value = query, onValueChange = { query = it }, modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("Search French or meaning…") }, singleLine = true, shape = RoundedCornerShape(16.dp)
+            placeholder = { Text("Search French or meaning…") }, singleLine = true, shape = R.xl
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs)) {
             listOf("All", "A1", "A2", "B1").forEach { lv -> Chip(lv, level == lv) { level = lv } }
         }
-        Text("${store.wordsLearnedCount()} words at mastery box 2+ • tap 🔊 to hear", fontSize = 13.sp, color = Color.Gray)
-        LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text("${store.wordsLearnedCount()} words at mastery box 2+ • tap 🔊 to hear", style = T.caption)
+        LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
             items(rows, key = { it.first.fr }) { (p, box, lesson) ->
                 Row(
-                    Modifier.fillMaxWidth().clip(RoundedCornerShape(14.dp)).background(Color.White).padding(12.dp),
+                    Modifier.fillMaxWidth().clip(R.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), R.xl).padding(Sp.sm),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("🔊", fontSize = 22.sp, modifier = Modifier.clickable { speaker.speak(p.fr) }.padding(end = 10.dp))
+                    Text("🔊", fontSize = 22.sp, modifier = Modifier.clickable { speaker.speak(p.fr) }.padding(end = Sp.sm).semantics { contentDescription = "Play ${p.fr}"; role = Role.Button })
                     Column(Modifier.weight(1f)) {
-                        Text(p.fr, fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                        Text(p.meaning(lang), fontSize = 14.sp, color = Color(0xFF6B7280))
-                        if (lesson.isNotBlank()) Text("📚 $lesson • ${p.level}", fontSize = 12.sp, color = Color.Gray)
+                        Text(p.fr, style = T.bodySemi, color = Ink)
+                        Text(p.meaning(lang), style = T.secondary, color = InkSoft)
+                        if (lesson.isNotBlank()) Text("📚 $lesson • ${p.level}", style = T.caption)
                     }
                     Text(
                         if (box == 0) "○ new" else "●".repeat(box) + "○".repeat(5 - box),
-                        fontSize = 12.sp, color = if (box == 0) Color.Gray else Gold
+                        style = T.caption, color = if (box == 0) InkMuted else Gold
                     )
                 }
             }

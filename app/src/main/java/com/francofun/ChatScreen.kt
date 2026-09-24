@@ -1,6 +1,7 @@
 package com.francofun
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -166,49 +167,49 @@ fun ChatScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, chain: Bool
     }
 
     Column(Modifier.fillMaxSize()) {
-        Row(Modifier.padding(horizontal = 16.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("←", fontSize = 26.sp, modifier = Modifier.clickable(onClick = onBack).padding(end = 14.dp))
-            Text("Simba 🦁", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Blue, modifier = Modifier.weight(1f))
-            Text("📞", fontSize = 22.sp, modifier = Modifier.clickable(onClick = onCall).padding(end = 12.dp))
-            Text("↻", fontSize = 26.sp, modifier = Modifier.clickable { restart() })
+        Row(Modifier.padding(horizontal = Sp.md, vertical = Sp.sm), verticalAlignment = Alignment.CenterVertically) {
+            Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onBack).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
+            Text("Simba 🦁", style = T.screenTitle, color = Blue, modifier = Modifier.weight(1f))
+            Text("📞", fontSize = 22.sp, modifier = Modifier.clickable(onClick = onCall).padding(end = Sp.sm).semantics { contentDescription = "Voice call"; role = Role.Button })
+            Text("↻", style = T.section, color = Blue, modifier = Modifier.clickable { restart() }.semantics { contentDescription = "Restart scenario"; role = Role.Button })
         }
         Row(
-            Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = Sp.md),
+            horizontalArrangement = Arrangement.spacedBy(Sp.xs)
         ) {
             Scenario.entries.forEach { s -> Chip("${s.emoji} ${s.label}", scenario == s) { scenario = s } }
         }
-        Spacer(Modifier.size(8.dp))
+        Spacer(Modifier.size(Sp.xs))
         if (scriptFor(scenario).intermediate.isNotEmpty()) {
             Row(
-                Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = Sp.md),
+                horizontalArrangement = Arrangement.spacedBy(Sp.xs)
             ) {
                 Reg.entries.forEach { r -> Chip(r.label, reg == r) { reg = r } }
             }
-            Spacer(Modifier.size(8.dp))
+            Spacer(Modifier.size(Sp.xs))
         }
         Row(
-            Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = Sp.md),
+            horizontalArrangement = Arrangement.spacedBy(Sp.xs)
         ) {
             HelpLang.entries.forEach { l -> Chip("💡 ${l.label}", store.helpLang == l) { store.updateHelpLang(l) } }
         }
         if (chain) {
-            Spacer(Modifier.size(4.dp))
+            Spacer(Modifier.size(Sp.xxs))
             Text(
                 "🔗 Capstone chain ${Scenario.entries.indexOf(scenario) + 1}/12 — ${scenario.label} (${reg.label})",
-                fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Blue,
-                modifier = Modifier.padding(horizontal = 16.dp)
+                style = T.caption, color = Blue,
+                modifier = Modifier.padding(horizontal = Sp.md)
             )
         }
-        Spacer(Modifier.size(4.dp))
+        Spacer(Modifier.size(Sp.xxs))
 
         LazyColumn(
             Modifier.weight(1f).fillMaxWidth(),
             state = listState,
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            contentPadding = PaddingValues(Sp.md),
+            verticalArrangement = Arrangement.spacedBy(Sp.sm)
         ) {
             itemsIndexed(msgs) { i, m ->
                 Bubble(
@@ -218,21 +219,21 @@ fun ChatScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, chain: Bool
                 )
             }
             if (typing) {
-                item { Text("Simba écrit… ✍️", color = Color.Gray, fontStyle = FontStyle.Italic) }
+                item { Text("Simba écrit… ✍️", style = T.secondary, color = InkMuted) }
             }
         }
 
-        Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp), horizontalArrangement = Arrangement.Center) {
-            Text("🔥 Chambrer Simba (roast me, gently)", color = Red, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable {
+        Row(Modifier.fillMaxWidth().padding(horizontal = Sp.sm), horizontalArrangement = Arrangement.Center) {
+            Text("🔥 Chambrer Simba (roast me, gently)", style = T.label, color = Red, modifier = Modifier.clickable {
                 val roast = ROASTS.random()
                 msgs.add(ChatMsg(Who.TUTOR, roast.fr, roast.en))
                 store.touchStreak()
                 if (store.autoSpeak) speaker.speak(roast.fr)
-            }.padding(8.dp))
+            }.padding(Sp.xs))
         }
 
         Row(
-            Modifier.fillMaxWidth().padding(8.dp).imePadding(),
+            Modifier.fillMaxWidth().padding(Sp.xs).imePadding(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             OutlinedTextField(
@@ -243,7 +244,7 @@ fun ChatScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, chain: Bool
                 maxLines = 3,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = { send(input) }),
-                shape = RoundedCornerShape(24.dp)
+                shape = R.pill
             )
             Spacer(Modifier.size(6.dp))
             Box(
@@ -260,7 +261,7 @@ fun ChatScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, chain: Bool
                 contentAlignment = Alignment.Center
             ) { Text("➤", fontSize = 20.sp, color = Color.White) }
         }
-        Text("+2 XP per message • ${store.todayChat} today", fontSize = 12.sp, color = Color.Gray, modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp))
+        Text("+2 XP per message • ${store.todayChat} today", style = T.caption, modifier = Modifier.padding(horizontal = Sp.md, vertical = Sp.xxs))
     }
 }
 
@@ -277,37 +278,37 @@ private fun Bubble(m: ChatMsg, lang: HelpLang, onSpeak: () -> Unit, onToggleHelp
             }
             if (m.correction.isNotBlank()) {
                 Box(
-                    Modifier.widthIn(max = 300.dp).clip(RoundedCornerShape(10.dp))
-                        .background(Color(0xFFFFF3CD)).padding(8.dp)
+                    Modifier.widthIn(max = 300.dp).clip(R.md)
+                        .background(Color(0xFFFFF3CD)).padding(Sp.xs)
                 ) {
                     Text(
                         "💡 ${lang.t("You could also say", "Unaweza pia sema", "Unaweza pia sema")}: “${m.correction}”",
-                        fontSize = 13.sp
+                        style = T.caption, color = Ink
                     )
                 }
             }
         }
         Who.TUTOR -> Row(Modifier.fillMaxWidth()) {
-            Text("🦁", fontSize = 26.sp, modifier = Modifier.padding(end = 8.dp, top = 4.dp))
+            Text("🦁", fontSize = 26.sp, modifier = Modifier.padding(end = Sp.xs, top = Sp.xxs))
             Column(
                 Modifier.widthIn(max = 300.dp)
-                    .clip(RoundedCornerShape(18.dp, 18.dp, 18.dp, 4.dp))
-                    .background(Color.White).padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .clip(R.lg)
+                    .background(Surface).border(1.dp, Color(0xFFE3E7F2), R.lg).padding(Sp.sm),
+                verticalArrangement = Arrangement.spacedBy(Sp.xs)
             ) {
-                Text(m.fr, fontSize = 18.sp, fontWeight = FontWeight.Bold)
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    Text("🔊 Listen", color = Blue, fontWeight = FontWeight.SemiBold, modifier = Modifier.clickable(onClick = onSpeak))
+                Text(m.fr, style = T.bodySemi, color = Ink)
+                Row(horizontalArrangement = Arrangement.spacedBy(Sp.md)) {
+                    Text("🔊 Listen", style = T.label, color = Blue, modifier = Modifier.clickable(onClick = onSpeak))
                     if (m.help.isNotBlank()) {
                         Text(
                             "💡 ${lang.t("Help", "Msaada", "Msaada")}",
-                            color = Blue, fontWeight = FontWeight.SemiBold,
+                            style = T.label, color = Blue,
                             modifier = Modifier.clickable(onClick = onToggleHelp)
                         )
                     }
                 }
-                if (m.showHelp) Text(m.help, fontSize = 15.sp, fontStyle = FontStyle.Italic, color = Color(0xFF444B5E))
-                if (m.word.isNotBlank()) Text("📚 ${m.word}", fontSize = 14.sp, color = Color(0xFF1B7A2F))
+                if (m.showHelp) Text(m.help, style = T.secondary, color = InkSoft)
+                if (m.word.isNotBlank()) Text("📚 ${m.word}", style = T.caption, color = Green)
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.francofun
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
@@ -128,29 +129,29 @@ fun CallScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, onBack: () 
         speaker.onDoneListener = null
     }
 
-    Column(Modifier.fillMaxSize().padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(Modifier.fillMaxSize().padding(Sp.lg), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("←", fontSize = 26.sp, modifier = Modifier.clickable(onClick = { endCall(); onBack() }).padding(end = 14.dp))
-            Text("📞 Simba call", fontSize = 22.sp, fontWeight = FontWeight.ExtraBold, color = Blue, modifier = Modifier.weight(1f))
-            Text(if (hint) "💡 on" else "💡", modifier = Modifier.clickable { hint = !hint }.padding(8.dp))
+            Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = { endCall(); onBack() }).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
+            Text("📞 Simba call", style = T.screenTitle, color = Blue, modifier = Modifier.weight(1f))
+            Text(if (hint) "💡 on" else "💡", style = T.label, color = Blue, modifier = Modifier.clickable { hint = !hint }.padding(Sp.xs))
         }
-        Spacer(Modifier.size(16.dp))
+        Spacer(Modifier.size(Sp.md))
         if (!inCall) {
             Row(
                 Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(Sp.xs)
             ) {
                 Scenario.entries.forEach { s -> Chip("${s.emoji} ${s.label}", scenario == s) { scenario = s; msgs.clear(); turnIdx = 0 } }
             }
-            Spacer(Modifier.size(8.dp))
+            Spacer(Modifier.size(Sp.xs))
             if (scriptFor(scenario).intermediate.isNotEmpty()) {
                 Row(
                     Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(Sp.xs)
                 ) {
                     Reg.entries.forEach { r -> Chip(r.label, reg == r) { reg = r; msgs.clear(); turnIdx = 0 } }
                 }
-                Spacer(Modifier.size(8.dp))
+                Spacer(Modifier.size(Sp.xs))
             }
         }
         Box(
@@ -162,7 +163,11 @@ fun CallScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, onBack: () 
         ) {
             Text(when { mic.listening -> "🎤"; thinking -> "💭"; else -> "🦁" }, fontSize = 64.sp)
         }
-        Spacer(Modifier.size(12.dp))
+        if (mic.listening) {
+            Spacer(Modifier.size(Sp.xs))
+            VoiceWaveform(active = true, color = Blue, modifier = Modifier.fillMaxWidth().padding(horizontal = Sp.xl))
+        }
+        Spacer(Modifier.size(Sp.sm))
         Text(
             when {
                 !inCall -> lang.t("Tap Start to talk hands-free", "Gusa Anza kuongea", "Gusa Start kuongea")
@@ -170,24 +175,24 @@ fun CallScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, onBack: () 
                 thinking -> "Simba réfléchit…"
                 awaitingReply -> lang.t("Tap the mic to reply 🎤", "Gusa maiki kujibu 🎤", "Gusa mic kujibu 🎤")
                 else -> lang.t("Simba speaks, then you reply", "Simba anaongea, kisha unajibu", "Simba anaongea, kisha unajibu")
-            }, fontSize = 16.sp, color = Color.Gray
+            }, style = T.secondary, color = InkSoft
         )
-        if (error.isNotBlank()) Text(error, color = Color(0xFFB3261E), modifier = Modifier.padding(8.dp))
-        Spacer(Modifier.size(12.dp))
+        if (error.isNotBlank()) Text(error, style = T.secondary, color = Red, modifier = Modifier.padding(Sp.xs))
+        Spacer(Modifier.size(Sp.sm))
         if (!inCall) {
             BigButton("▶ ${lang.t("Start call", "Anza", "Anza")}", onClick = { startCall() })
         } else {
             BigButton("⏹ ${lang.t("End call", "Maliza", "Maliza")}", onClick = { endCall() }, color = Red)
         }
-        Spacer(Modifier.size(12.dp))
-        LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Spacer(Modifier.size(Sp.sm))
+        LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
             items(msgs.toList()) { m ->
-                Box(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).background(Color.White).padding(10.dp)) {
+                Box(Modifier.fillMaxWidth().clip(R.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), R.xl).padding(Sp.sm)) {
                     Column {
-                        Text(m.fr, fontWeight = FontWeight.Bold)
-                        if (hint && m.help.isNotBlank()) Text(m.help, fontSize = 14.sp, color = Color.Gray)
-                        if (m.correction.isNotBlank()) Text("✏️ ${m.correction}", fontSize = 13.sp, color = Color(0xFF8A6D00))
-                        if (m.word.isNotBlank()) Text("📚 ${m.word}", fontSize = 13.sp, color = Color(0xFF1B7A2F))
+                        Text(m.fr, style = T.bodySemi, color = Ink)
+                        if (hint && m.help.isNotBlank()) Text(m.help, style = T.secondary, color = InkSoft)
+                        if (m.correction.isNotBlank()) Text("✏️ ${m.correction}", style = T.caption, color = Gold)
+                        if (m.word.isNotBlank()) Text("📚 ${m.word}", style = T.caption, color = Green)
                     }
                 }
             }
