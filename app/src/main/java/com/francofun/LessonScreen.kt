@@ -1,5 +1,6 @@
 package com.francofun
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -40,7 +41,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -93,7 +96,7 @@ fun LessonScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, lesson: L
             LaunchedEffect(lesson.id) { reward = store.finishLesson(lesson.id, done, questions.size, speakOk, due.size) }
             val r = reward
             if (r == null) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-            else Finished(store, done, questions.size, r.first, r.second, onExit)
+            else Finished(store, done, questions.size, r.first, r.second, lesson, onExit)
         }
     }
 }
@@ -437,26 +440,53 @@ private fun OutOfHearts(lang: HelpLang, onExit: () -> Unit) {
 }
 
 @Composable
-private fun Finished(store: Store, correct: Int, total: Int, xp: Int, gems: Int, onDone: () -> Unit) {
+private fun Finished(store: Store, correct: Int, total: Int, xp: Int, gems: Int, lesson: Lesson, onDone: () -> Unit) {
     val perfect = correct == total
     val ctx = LocalContext.current
     if (perfect) { Sounds.fanfare(store.soundOn); if (!animationsOff(ctx)) ConfettiOverlay(true) }
     Column(Modifier.fillMaxSize().padding(Sp.xxl), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Text(if (perfect) "🏆" else "🎉", fontSize = 80.sp)
+        Mascot(if (perfect) MascotMood.CELEBRATING else MascotMood.HAPPY, size = 96.dp)
         Spacer(Modifier.padding(Sp.sm))
-        Text(when (store.helpLang) { HelpLang.ENGLISH -> "Lesson complete!"; HelpLang.SWAHILI -> "Hongera! Umemaliza somo!"; HelpLang.SHENG -> "Umemaliza msee! Uko kali!" }, style = T.screenTitle, color = Blue, textAlign = TextAlign.Center)
+        Text(when (store.helpLang) { HelpLang.ENGLISH -> "Lesson complete!"; HelpLang.SWAHILI -> "Hongera! Umemaliza somo!"; HelpLang.SHENG -> "Umemaliza msee! Uko kali!" }, style = T.screenTitle, color = Cobalt, textAlign = TextAlign.Center)
         Spacer(Modifier.padding(Sp.xs))
-        Text("$correct / $total correct", style = T.section)
+        Text("$correct / $total correct", style = T.section, color = Ink)
         if (!perfect) {
             val (vfr, vhelp) = remember { simbaVanne(store.helpLang) }
             Spacer(Modifier.padding(Sp.xxs))
-            Text(vfr, style = T.secondary, textAlign = TextAlign.Center)
-            if (vhelp.isNotBlank()) Text(vhelp, style = T.caption, textAlign = TextAlign.Center)
+            Text(vfr, style = T.secondary, textAlign = TextAlign.Center, color = InkSoft)
+            if (vhelp.isNotBlank()) Text(vhelp, style = T.caption, textAlign = TextAlign.Center, color = InkMuted)
         }
         Text("+$xp XP ⭐   +$gems 💎", style = T.number, color = Gold)
         val (into, need) = xpIntoLevel(store.xp)
-        Text("Level ${levelForXp(store.xp)} ${levelTitle(levelForXp(store.xp))} • $into/$need XP", style = T.caption)
+        Text("Level ${levelForXp(store.xp)} ${levelTitle(levelForXp(store.xp))} • $into/$need XP", style = T.caption, color = InkSoft)
+        if (lesson.culture != null) {
+            Spacer(Modifier.padding(Sp.sm))
+            // §4.4 cultural content photo (not a wallpaper) + aside
+            CultureCard(photoForLesson(lesson), lesson.culture!!)
+        }
         Spacer(Modifier.padding(Sp.xxl))
         BigButton("CONTINUE", onClick = onDone)
+    }
+}
+
+/** Contextual travel/culture photo used as lesson content (§39–45), never as a screen wallpaper. */
+@Composable
+private fun CultureCard(photoRes: Int, text: String) {
+    Card {
+        Row(verticalAlignment = Alignment.Top) {
+            Image(
+                painter = painterResource(photoRes),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(Rad.lg)
+            )
+            Spacer(Modifier.padding(Sp.sm))
+            Column(Modifier.weight(1f)) {
+                Text("🌍 Culture", style = T.label, color = Violet)
+                Text(text, style = T.caption, color = InkSoft)
+            }
+        }
     }
 }

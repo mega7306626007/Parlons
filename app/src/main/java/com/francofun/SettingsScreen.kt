@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -64,10 +65,13 @@ fun SettingsScreen(store: Store, speechDebug: String = "", onBack: () -> Unit) {
         }
     }
 
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
+    AppBackground(tint = Lavender) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Sp.xxl), verticalArrangement = Arrangement.spacedBy(Sp.md)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onBack).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
-            Text(lang.t("Settings", "Mipangilio", "Settings"), style = T.screenTitle, color = Blue)
+            Text(lang.t("Settings", "Mipangilio", "Settings"), style = T.screenTitle, color = Ink)
+            Spacer(Modifier.weight(1f))
+            Mascot(MascotMood.HAPPY, size = 48.dp)
         }
         Text(lang.t("I explain things in", "Nitaeleza kwa", "Nitaeleza kwa"), style = T.bodySemi, color = Ink)
         LangChips(store)
@@ -183,7 +187,8 @@ fun SettingsScreen(store: Store, speechDebug: String = "", onBack: () -> Unit) {
             BigButton(lang.t("Tap again to confirm reset", "Gusa tena kuthibitisha", "Gusa tena kuthibitisha"), onClick = {
                 store.resetProgress()
                 confirmReset = false
-            }, color = Red)
+            }, color = Coral)
         }
+    }
     }
 }

@@ -44,18 +44,18 @@ import kotlinx.coroutines.launch
 fun OnboardingScreen(store: Store, onDone: () -> Unit) {
     var step by remember { mutableStateOf(0) }
     var topic by remember { mutableStateOf("") }
-    Column(Modifier.fillMaxSize().padding(Sp.xxl), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Sp.xxl), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         when (step) {
             0 -> {
-                Text("🇫🇷", fontSize = 72.sp)
-                Text("Parlons!", style = T.display, color = Blue)
-                Text("French for Kenyans — English, Kiswahili na Sheng.", style = T.body, modifier = Modifier.padding(vertical = Sp.sm))
+                Mascot(MascotMood.EXCITED, size = 120.dp)
+                Text("Parlons!", style = T.display, color = Cobalt)
+                Text("French for Kenyans — English, Kiswahili na Sheng.", style = T.body, color = InkSoft, modifier = Modifier.padding(vertical = Sp.sm), textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 LangChips(store)
                 Spacer(Modifier.padding(Sp.md))
                 BigButton("Next →", onClick = { step = 1 })
             }
             1 -> {
-                Text("🎯", fontSize = 64.sp)
+                Mascot(MascotMood.THINKING, size = 100.dp)
                 Text("Daily goal?", style = T.screenTitle, color = Ink)
                 Spacer(Modifier.padding(Sp.sm))
                 Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs)) {
@@ -65,8 +65,8 @@ fun OnboardingScreen(store: Store, onDone: () -> Unit) {
                 BigButton("Next →", onClick = { step = 2 })
             }
             2 -> {
-                Text("🔔", fontSize = 64.sp)
-                Text("Reminders keep streaks alive.", style = T.section, color = Ink)
+                Mascot(MascotMood.ENCOURAGING, size = 100.dp)
+                Text("Reminders keep streaks alive.", style = T.section, color = Ink, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { store.setOnboarded(); onDone() }
                 Spacer(Modifier.padding(Sp.sm))
                 BigButton("Enable reminders", onClick = {
@@ -87,10 +87,11 @@ fun StatsScreen(store: Store, onBack: () -> Unit) {
     val week = store.weeklyXp()
     val max = (week.maxOrNull() ?: 1).coerceAtLeast(1)
     // §46: dense statistics stay photo-free for maximum clarity.
-    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+    AppBackground(tint = GoldSoft) {
+    Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Sp.xxl), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onBack).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
-            Text("Stats 📊", style = T.screenTitle, color = Blue)
+            Text("Stats 📊", style = T.screenTitle, color = Ink)
         }
         Row(Modifier.fillMaxWidth().clip(Rad.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), Rad.xl).padding(Sp.md), horizontalArrangement = Arrangement.SpaceEvenly) {
             StatBox("🔥", "${store.streak}", "streak")
@@ -128,11 +129,12 @@ fun StatsScreen(store: Store, onBack: () -> Unit) {
         Text("Trophies 🏆", style = T.bodySemi, color = Ink)
         BADGES.forEach { b ->
             val got = store.badges[b.id] == true
-            Row(Modifier.fillMaxWidth().clip(Rad.lg).background(if (got) Color(0xFFFFF8E1) else Surface).border(1.dp, Color(0xFFE3E7F2), Rad.lg).padding(Sp.sm), verticalAlignment = Alignment.CenterVertically) {
+            Row(Modifier.fillMaxWidth().clip(Rad.lg).background(if (got) GoldSoft else Surface).border(1.dp, Border, Rad.lg).padding(Sp.sm), verticalAlignment = Alignment.CenterVertically) {
                 Text(if (got) b.emoji else "🔒", fontSize = 24.sp, modifier = Modifier.padding(end = Sp.sm))
                 Column { Text(b.fr, style = T.bodySemi, color = Ink); Text(b.desc, style = T.secondary, color = InkSoft) }
             }
         }
+    }
     }
 }
 

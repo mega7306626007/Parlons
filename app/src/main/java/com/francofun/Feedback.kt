@@ -74,7 +74,7 @@ fun ConfettiOverlay(show: Boolean) {
     if (!show) return
     var tick by remember { mutableStateOf(0) }
     LaunchedEffect(Unit) { while (true) { delay(120); tick++ } }
-    val colors = listOf(Color(0xFF2B59C3), Color(0xFFEF4135), Color(0xFF2E9E4F), Color(0xFFFFB400), Color(0xFF9B5DE5))
+    val colors = listOf(Cobalt, Coral, Emerald, Gold, Violet, Turquoise, Pink)
     val parts = remember { List(60) { Random.nextFloat() to Random.nextFloat() } }
     Box(Modifier.fillMaxSize()) {
         Canvas(Modifier.fillMaxSize()) {
