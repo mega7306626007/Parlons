@@ -215,6 +215,9 @@ class Store(ctx: Context) {
         return (gained + bonus) to gainedGems
     }
 
+    fun questClaimed(qid: String): Boolean =
+        sp.getBoolean("qdone_${qid}_${LocalDate.now().toEpochDay()}", false)
+
     /** Speed round scoring (§5.13): fun + daily-goal padding. No hearts, no SRS. Returns XP gained. */
     fun finishSpeed(correct: Int, total: Int, bestCombo: Int): Int {
         rollDay()
