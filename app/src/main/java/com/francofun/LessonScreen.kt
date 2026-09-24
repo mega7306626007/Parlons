@@ -164,8 +164,15 @@ private fun Quiz(store: Store, speaker: Speaker, speechEnv: SpeechEnv, questions
             else -> append("${q.phrase.fr}  =  ${q.phrase.meaning(lang)}")
         }
         if (lang != HelpLang.ENGLISH && q.type != QType.CONJUGATE) append("\n(${q.phrase.en})")
-        q.phrase.tip?.let { append("\n💡 $it") }
-        if (q.hint.isNotBlank() && q.type == QType.CONJUGATE) append("\n💡 ${q.hint}")
+        // Wrong answers get the full explanation stack (research: feedback → learn).
+        if (result == false) {
+            q.phrase.grammar?.let { append("\n📐 Why: $it") }
+            q.phrase.tip?.let { append("\n💡 $it") }
+            if (q.hint.isNotBlank() && q.type == QType.CONJUGATE) append("\n💡 ${q.hint}")
+        } else {
+            q.phrase.tip?.let { append("\n💡 $it") }
+            if (q.hint.isNotBlank() && q.type == QType.CONJUGATE) append("\n💡 ${q.hint}")
+        }
     }
 
     Column(Modifier.fillMaxSize()) {

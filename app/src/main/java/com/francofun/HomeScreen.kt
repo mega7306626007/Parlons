@@ -61,6 +61,7 @@ fun HomeTab(
             item { HeaderRow(store, onProfile) }
             item { Greeting(lang) }
             item { ProgressCard(store, into, need) }
+            item { WordOfDayCard(store) }
             item { StreakCalendarCard(store) }
             item { PowerUpsCard(store) }
             item { LangChips(store) }
@@ -163,6 +164,40 @@ private fun ReviewBanner(dueN: Int, onPractice: () -> Unit) {
                 Text("Spaced repetition keeps them fresh", style = T.caption, color = InkSoft)
             }
             Text("→", style = T.section, color = Ink)
+        }
+    }
+}
+
+/* ── Word of the day (research: daily habit hook) ── */
+
+@Composable
+private fun WordOfDayCard(store: Store) {
+    // Deterministic pick from all core phrases — same word all day, rotates daily.
+    val phrase = remember {
+        val all = ALL_PHRASES
+        val day = java.time.LocalDate.now().toEpochDay()
+        all[(day % all.size).toInt().coerceAtLeast(0)]
+    }
+    val lang = store.helpLang
+    Card {
+        Column(verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("🌟 Word of the day", style = T.label, color = Gold, modifier = Modifier.weight(1f))
+                Text(phrase.level, style = T.caption, color = InkMuted)
+            }
+            Text(phrase.fr, style = T.section, color = Cobalt)
+            Text(phrase.meaning(lang), style = T.body, color = Ink)
+            phrase.tip?.let {
+                Text("💡 $it", style = T.caption, color = InkSoft)
+            }
+            if (store.srs.containsKey(phrase.key())) {
+                val item = store.srs[phrase.key()]
+                Text(
+                    "In your deck · box ${item?.box ?: 1}",
+                    style = T.caption,
+                    color = Emerald
+                )
+            }
         }
     }
 }

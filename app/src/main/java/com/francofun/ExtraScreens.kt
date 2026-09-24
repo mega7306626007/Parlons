@@ -43,7 +43,6 @@ import kotlinx.coroutines.launch
 @Composable
 fun OnboardingScreen(store: Store, onDone: () -> Unit) {
     var step by remember { mutableStateOf(0) }
-    var topic by remember { mutableStateOf("") }
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Sp.xxl), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         when (step) {
             0 -> {
@@ -65,6 +64,19 @@ fun OnboardingScreen(store: Store, onDone: () -> Unit) {
                 BigButton("Next →", onClick = { step = 2 })
             }
             2 -> {
+                Mascot(MascotMood.HAPPY, size = 100.dp)
+                Text("How Parlons works", style = T.screenTitle, color = Ink, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
+                Spacer(Modifier.padding(Sp.sm))
+                Column(verticalArrangement = Arrangement.spacedBy(Sp.sm), horizontalAlignment = Alignment.Start, modifier = Modifier.fillMaxWidth()) {
+                    OnboardTip("📚", "Learn path", "6 units · 65 lessons, unlock as you go")
+                    OnboardTip("🔁", "Smart review", "Spaced repetition keeps words fresh")
+                    OnboardTip("🦁", "Chat with Simba", "Offline French conversation practice")
+                    OnboardTip("⚡", "Power-ups", "Streak freezes, 2× XP, daily chests")
+                }
+                Spacer(Modifier.padding(Sp.md))
+                BigButton("Next →", onClick = { step = 3 })
+            }
+            3 -> {
                 Mascot(MascotMood.ENCOURAGING, size = 100.dp)
                 Text("Reminders keep streaks alive.", style = T.section, color = Ink, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { store.setOnboarded(); onDone() }
@@ -75,9 +87,19 @@ fun OnboardingScreen(store: Store, onDone: () -> Unit) {
                 })
                 Spacer(Modifier.padding(Sp.xs))
                 Text("Skip", style = T.label, color = Blue, modifier = Modifier.clickable { store.setOnboarded(); onDone() }.padding(Sp.sm))
-                // hidden topic field kept for parity with custom-lesson onboarding variant
-                topic = topic
             }
+        }
+    }
+}
+
+@Composable
+private fun OnboardTip(icon: String, title: String, sub: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+        Text(icon, fontSize = 22.sp)
+        Spacer(Modifier.padding(Sp.sm))
+        Column {
+            Text(title, style = T.bodySemi, color = Ink)
+            Text(sub, style = T.caption, color = InkSoft)
         }
     }
 }
