@@ -28,7 +28,7 @@ android {
     // Do NOT restrict ABIs — all 4 are needed for the Vosk/ONNX native
     // libraries to work across real devices (§9.5).
     // ndk { abiFilters += listOf(...) }   <-- must NOT be added
-    androidResources { noCompress += listOf("onnx", "zip", "vosk") }
+    androidResources { noCompress += listOf("onnx", "zip", "vosk", "txt") }
     packaging {
         resources { excludes += "/META-INF/{AL2.0,LGPL2.1}" }
         jniLibs { useLegacyPackaging = false }

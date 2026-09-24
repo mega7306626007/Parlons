@@ -1,5 +1,8 @@
 package com.francofun.content
 
+import com.francofun.*
+import com.francofun.content.*
+import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,7 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +46,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.io.File
 
+private val GENRES = NOVEL_GENRES
+private val LEVELS = NOVEL_LEVELS
+
 /* ═══════════ NOVEL READER ═══════════ */
 
 @Composable
@@ -57,8 +62,9 @@ fun NovelTab(
     var selectedLevel by remember { mutableStateOf("All") }
     var searchQuery by remember { mutableStateOf("") }
     var showMature by remember { mutableStateOf(false) }
-    val genres = listOf("All") + GENRES
-    val levels = listOf("All") + LEVELS
+    val context = LocalContext.current
+    val allNovels = remember { buildNovelList(context) }
+    val genres = listOf("All") + NOVEL_GENRES
 
     AppBackground(tint = CobaltSoft) {
         LazyColumn(
@@ -72,26 +78,44 @@ fun NovelTab(
                         modifier = Modifier.clickable(onClick = onBack).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
                     Text("📚 Novels", style = T.screenTitle, color = Ink)
                 }
-                Text("500+ novels in French · printable · with English translations", style = T.secondary, color = InkSoft)
+                Text("${allNovels.size} novels · French + English · printable", style = T.secondary, color = InkSoft)
             }
             item {
                 Card {
                     Column(verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
                         SectionHeader("🔍 Filter & Search")
                         OutlinedSearchField("Search novels...", searchQuery) { searchQuery = it }
-                        Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), modifier = Modifier.fillMaxWidth()) {
-                            Chip("Genre", selectedGenre != "All", "Genre") {
-                                selectedGenre = if (selectedGenre == "All") "All" else "All"
-                            }
-                            Chip("Level", selectedLevel != "All", "Level") {
-                                selectedLevel = if (selectedLevel == "All") "All" else "All"
+                        Text("Genre:", style = T.label, color = Ink)
+                        Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs), modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                            GENRES.forEach { g ->
+                                val sel = selectedGenre == g
+                                Text(
+                                    g, style = T.label,
+                                    color = if (sel) White else InkSoft,
+                                    modifier = Modifier
+                                        .clip(Rad.pill)
+                                        .background(if (sel) Cobalt else Surface)
+                                        .border(2.dp, if (sel) Cobalt else Border, Rad.pill)
+                                        .clickable { selectedGenre = g }
+                                        .padding(horizontal = Sp.sm, vertical = Sp.xs)
+                                )
                             }
                         }
-                        Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), modifier = Modifier.fillMaxWidth()) {
-                            GenreChip(selectedGenre) { selectedGenre = it }
-                        }
-                        Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), modifier = Modifier.fillMaxWidth()) {
-                            LevelChip(selectedLevel) { selectedLevel = it }
+                        Text("Level:", style = T.label, color = Ink)
+                        Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs)) {
+                            LEVELS.forEach { l ->
+                                val sel = selectedLevel == l
+                                Text(
+                                    l, style = T.label,
+                                    color = if (sel) White else InkSoft,
+                                    modifier = Modifier
+                                        .clip(Rad.pill)
+                                        .background(if (sel) Cobalt else Surface)
+                                        .border(2.dp, if (sel) Cobalt else Border, Rad.pill)
+                                        .clickable { selectedLevel = l }
+                                        .padding(horizontal = Sp.sm, vertical = Sp.xs)
+                                )
+                            }
                         }
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Text("🔞 Mature", style = T.label, color = Ink, modifier = Modifier.weight(1f))
@@ -104,17 +128,14 @@ fun NovelTab(
                 }
             }
             item {
-                Text("${filteredNovels(novels, selectedGenre, selectedLevel, searchQuery, showMature).size} novels found", style = T.caption, color = InkMuted)
-            }
-            item {
                 Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), modifier = Modifier.fillMaxWidth()) {
-                    QuickNovelAction("📖", "All Novels", Cobalt, Modifier.weight(1f)) {
+                    QuickNovelAction("📖", "All Novels (${allNovels.size})", Cobalt, Modifier.weight(1f)) {
                         selectedGenre = "All"; selectedLevel = "All"; searchQuery = ""; showMature = false
                     }
                     QuickNovelAction("✏️", "Write Yours", Violet, Modifier.weight(1f), onClick = onWriteClick)
                 }
             }
-            items(filteredNovels(novels, selectedGenre, selectedLevel, searchQuery, showMature)) { novel ->
+            items(filteredNovels(allNovels, selectedGenre, selectedLevel, searchQuery, showMature)) { novel ->
                 NovelCard(novel) { onNovelClick(novel) }
             }
         }
@@ -157,7 +178,7 @@ private fun NovelCard(novel: Novel, onClick: () -> Unit) {
                     Text(novel.title, style = T.bodySemi, color = Ink)
                     if (novel.mature) Text(" 🔞", fontSize = 12.sp)
                 }
-                Text("${novel.genre} · ${novel.level}", style = T.caption, color = InkSoft)
+                Text("${novel.genre} · ${novel.level} · ${novel.pageCount}p", style = T.caption, color = InkSoft)
                 Text("${novel.author}", style = T.caption, color = InkMuted)
             }
             Text("→", style = T.section, color = InkMuted)
@@ -165,6 +186,7 @@ private fun NovelCard(novel: Novel, onClick: () -> Unit) {
     }
 }
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 private fun OutlinedSearchField(placeholder: String, value: String, onValueChange: (String) -> Unit) {
     TextField(
@@ -174,66 +196,9 @@ private fun OutlinedSearchField(placeholder: String, value: String, onValueChang
         singleLine = true,
         shape = Rad.xl,
         colors = TextFieldDefaults.textFieldColors(
-            focusedBorderColor = Cobalt, unfocusedBorderColor = Border
+            focusedIndicatorColor = Cobalt, unfocusedIndicatorColor = Border
         )
     )
-}
-
-@Composable
-private fun GenreChip(selected: String, onClick: (String) -> Unit) {
-    val genres = listOf("All") + GENRES
-    val isSelected = selected == "All" || selected == "All"
-    Row(
-        Modifier.clip(Rad.pill).background(if (selected == "All" || selected == "All") Cobalt else Surface)
-            .border(2.dp, if (selected == "All") Cobalt else Border, Rad.pill)
-            .semantics(mergeDescendants = true) { contentDescription = selected; role = Role.Button }
-            .clickable(onClick = { onClick("All") })
-            .padding(horizontal = Sp.sm, vertical = Sp.xs),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text("All", color = if (selected == "All") White else InkSoft, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-    }
-    GENRES.forEach { g ->
-        val sel = selected == g
-        Row(
-            Modifier.clip(Rad.pill).background(if (sel) Cobalt else Surface)
-                .border(2.dp, if (sel) Cobalt else Border, Rad.pill)
-                .semantics(mergeDescendants = true) { contentDescription = g; role = Role.Button }
-                .clickable(onClick = { onClick(g) })
-                .padding(horizontal = Sp.sm, vertical = Sp.xs),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(g, color = if (sel) White else InkSoft, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-        }
-    }
-}
-
-@Composable
-private fun LevelChip(selected: String, onClick: (String) -> Unit) {
-    val levels = listOf("All") + LEVELS
-    Row(
-        Modifier.clip(Rad.pill).background(if (selected == "All") Cobalt else Surface)
-            .border(2.dp, if (selected == "All") Cobalt else Border, Rad.pill)
-            .semantics(mergeDescendants = true) { contentDescription = selected; role = Role.Button }
-            .clickable(onClick = { onClick("All") })
-            .padding(horizontal = Sp.sm, vertical = Sp.xs),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text("All", color = if (selected == "All") White else InkSoft, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-    }
-    LEVELS.forEach { l ->
-        val sel = selected == l
-        Row(
-            Modifier.clip(Rad.pill).background(if (sel) Cobalt else Surface)
-                .border(2.dp, if (sel) Cobalt else Border, Rad.pill)
-                .semantics(mergeDescendants = true) { contentDescription = l; role = Role.Button }
-                .clickable(onClick = { onClick(l) })
-                .padding(horizontal = Sp.sm, vertical = Sp.xs),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(l, color = if (sel) White else InkSoft, fontWeight = FontWeight.Bold, fontSize = 14.sp)
-        }
-    }
 }
 
 @Composable
@@ -267,7 +232,7 @@ fun NovelReaderScreen(novel: Novel, onBack: () -> Unit) {
                 Text("📖 ${novel.title}", style = T.screenTitle, color = Ink, modifier = Modifier.weight(1f))
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("${novel.genre} · ${novel.level} · ${novel.author}", style = T.caption, color = InkMuted, modifier = Modifier.weight(1f))
+                Text("${novel.genre} · ${novel.level} · ${novel.author} · ${novel.pageCount} pages", style = T.caption, color = InkMuted, modifier = Modifier.weight(1f))
                 if (novel.mature) Text("🔞", fontSize = 18.sp)
                 if (novel.funny) Text("😂", fontSize = 18.sp)
             }
@@ -285,15 +250,14 @@ fun NovelReaderScreen(novel: Novel, onBack: () -> Unit) {
             Spacer(Modifier.padding(Sp.sm))
             BigButton("🖨️ Print / Share", onClick = {
                 val shareText = "📖 ${novel.title}\n${novel.description}\n\n🇫🇷 ${novel.frText}\n🇬🇧 ${novel.enText}"
-                val intent = android.content.Intent(Intent.ACTION_SEND).apply {
+                val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                     type = "text/plain"
-                    putExtra(Intent.EXTRA_TEXT, shareText)
+                    putExtra(android.content.Intent.EXTRA_TEXT, shareText)
                 }
-                context.startActivity(Intent.createChooser(intent, "Share ${novel.title}"))
+                context.startActivity(android.content.Intent.createChooser(intent, "Share ${novel.title}"))
             })
             if (novel.printable) {
-                BigButton("📄 Download PDF", color = Turquoise, onClick = {
-                    // Create a simple text file for printing
+                BigButton("📄 Download Text", color = Turquoise, onClick = {
                     val file = File(context.filesDir, "${novel.id}.txt")
                     file.writeText("${novel.title}\n${novel.frText}\n\n${novel.enText}")
                 })
@@ -304,6 +268,7 @@ fun NovelReaderScreen(novel: Novel, onBack: () -> Unit) {
 
 /* ═══════════ WRITING ASSISTANT ═══════════ */
 
+@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
 @Composable
 fun WritingAssistantScreen(onBack: () -> Unit, onSave: (String, String, String) -> Unit) {
     var title by remember { mutableStateOf("") }
@@ -373,7 +338,7 @@ fun WritingAssistantScreen(onBack: () -> Unit, onSave: (String, String, String) 
                         modifier = Modifier.fillMaxWidth().height(200.dp),
                         placeholder = { Text("Écris ton roman ici...") },
                         shape = Rad.xl,
-                        colors = TextFieldDefaults.textFieldColors(focusedBorderColor = Cobalt),
+                        colors = TextFieldDefaults.textFieldColors(focusedIndicatorColor = Cobalt),
                         singleLine = false
                     )
                     SectionHeader("🇬🇧 English translation")
@@ -382,7 +347,7 @@ fun WritingAssistantScreen(onBack: () -> Unit, onSave: (String, String, String) 
                         modifier = Modifier.fillMaxWidth().height(200.dp),
                         placeholder = { Text("Write the English translation...") },
                         shape = Rad.xl,
-                        colors = TextFieldDefaults.textFieldColors(focusedBorderColor = Cobalt),
+                        colors = TextFieldDefaults.textFieldColors(focusedIndicatorColor = Cobalt),
                         singleLine = false
                     )
                 }
@@ -392,10 +357,10 @@ fun WritingAssistantScreen(onBack: () -> Unit, onSave: (String, String, String) 
                 Column(verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
                     SectionHeader("💡 AI Suggestions")
                     Text("Based on your genre ($genre) and level ($level):", style = T.caption, color = InkMuted)
-                    Text(generateSuggestion(genre, level, frenchText), style = T.body, color = Ink)
+                    Text(generateSuggestion(genre, level), style = T.body, color = Ink)
                     Spacer(Modifier.padding(Sp.xs))
                     BigButton("💡 Get Suggestion", onClick = {
-                        suggestion = generateSuggestion(genre, level, frenchText)
+                        suggestion = generateSuggestion(genre, level)
                     })
                     if (suggestion.isNotBlank()) {
                         Text(suggestion, style = T.bodySemi, color = Cobalt)
@@ -412,7 +377,7 @@ fun WritingAssistantScreen(onBack: () -> Unit, onSave: (String, String, String) 
                 })
                 BigButton("✨ Generate", color = Violet, modifier = Modifier.weight(1f), onClick = {
                     if (title.isBlank()) title = "Mon Roman ${System.currentTimeMillis().toString().takeLast(4)}"
-                    if (frenchText.isBlank()) frenchText = generateFrenchExcerpt(genre, level)
+                    if (frenchText.isBlank()) frenchText = generateFrenchExcerpt(genre)
                 })
             }
             if (saved) Text("✅ Novel saved!", style = T.label, color = Emerald)
@@ -420,33 +385,38 @@ fun WritingAssistantScreen(onBack: () -> Unit, onSave: (String, String, String) 
     }
 }
 
-private fun generateSuggestion(genre: String, level: String, text: String): String {
+private fun generateSuggestion(genre: String, level: String): String {
     val suggestions = mapOf(
-        "Romance" to "Try adding dialogue between characters. Use 'Tu' for informal or 'Vous' for formal address. At $level, consider adding emotional descriptions.",
-        "Mystery" to "Add a clue in the next chapter. Use 'Qui...?' and 'Où...?' questions to create suspense. At $level, introduce red herrings.",
-        "Comedy" to "Add a misunderstanding scene. Use wordplay or unexpected twists. At $level, try a running gag.",
-        "Sci-Fi" to "Introduce a futuristic element. Describe technology using 'comme' comparisons. At $level, add philosophical themes.",
-        "Horror" to "Build tension with short sentences. Use 'soudain' and 'aucun bruit'. At $level, add unreliable narration.",
-        "Adventure" to "Add a journey scene. Use directional vocabulary ('à gauche', 'tout droit'). At $level, include a moral lesson.",
-        "Fantasy" to "Introduce a magical creature or spell. Use descriptive adjectives. At $level, create a prophecy.",
-        "Drama" to "Add an emotional climax. Use 'parce que' and 'bien que' for complex emotions. At $level, add a twist ending.",
-        "Slice-of-Life" to "Describe a mundane moment beautifully. Use sensory details. At $level, add inner monologue.",
-        "Mature" to "Explore complex themes like identity or loss. Use subjunctive mood. At $level, add ambiguous endings.",
-        "Funny" to "Add a character mistake or absurd situation. Use exaggerated descriptions. At $level, create verbal irony.",
-        "Thriller" to "Add a countdown or deadline. Use short, punchy sentences. At $level, add a plot twist.",
-        "Supernatural" to "Introduce an otherworldly element. Use mysterious descriptions. At $level, blur reality and fantasy.",
-        "Coming-of-Age" to "Add a moment of self-discovery. Use 'je réalise que...'. At $level, explore identity conflicts.",
-        "Historical" to "Add a historical detail or setting description. Use past tense ('passé composé'). At $level, add real events."
-    ).getOrDefault(genre, "Try adding more dialogue and description to your novel.")
-    return suggestions
+        "Romance" to "Try adding dialogue between characters. Use 'Tu' for informal or 'Vous' for formal address. Add emotional descriptions.",
+        "Mystery" to "Add a clue in the next chapter. Use 'Qui...?' and 'Où...?' questions to create suspense.",
+        "Comedy" to "Add a misunderstanding scene. Use wordplay or unexpected twists.",
+        "Sci-Fi" to "Introduce a futuristic element. Describe technology using 'comme' comparisons.",
+        "Horror" to "Build tension with short sentences. Use 'soudain' and 'aucun bruit'.",
+        "Adventure" to "Add a journey scene. Use directional vocabulary ('à gauche', 'tout droit').",
+        "Fantasy" to "Introduce a magical creature or spell. Use descriptive adjectives.",
+        "Drama" to "Add an emotional climax. Use 'parce que' and 'bien que' for complex emotions.",
+        "Slice-of-Life" to "Describe a mundane moment beautifully. Use sensory details.",
+        "Mature" to "Explore complex themes like identity or loss. Use subjunctive mood.",
+        "Funny" to "Add a character mistake or absurd situation. Use exaggerated descriptions.",
+        "Thriller" to "Add a countdown or deadline. Use short, punchy sentences.",
+        "Supernatural" to "Introduce an otherworldly element. Use mysterious descriptions.",
+        "Coming-of-Age" to "Add a moment of self-discovery. Use 'je réalise que...'.",
+        "Historical" to "Add a historical detail or setting description. Use past tense ('passé composé').",
+        "Detective" to "Add clues and suspects. Use 'l'enquête', 'l'indice', 'le suspect'.",
+        "Gothic" to "Create atmosphere with shadows and secrets. Use 'le château', 'la nuit', 'l'obscurité'.",
+        "Literary" to "Explore language, memory, and the human condition. Use metaphors.",
+        "Romantic" to "Celebrate love in all its complexity. Use passionate descriptions."
+    )
+    val suggestion = suggestions.getOrDefault(genre, "Try adding more dialogue and description to your novel.")
+    return "$suggestion (Level: $level)"
 }
 
-private fun generateFrenchExcerpt(genre: String, level: String): String {
+private fun generateFrenchExcerpt(genre: String): String {
     val excerpt = when (genre.lowercase()) {
         "romance" -> "La première fois que je l'ai vue, le monde s'est arrêté. Ses yeux brillaient comme deux étoiles perdues dans la nuit parisienne."
-        "mystery" -> "La lettre était posée sur la table. Personne ne savait qui l'avait écrite. Le parfum sur le papier était familier."
+        "mystery" -> "La lettre arriva sans expéditeur. Son contenu était clair, mais les implications étaient troublantes."
         "comedy" -> "Le chat était assis sur le clavier. Il tapait des mots au hasard. Quand j'ai regardé l'écran, le message dit : 'Je t'aime'."
-        "adventure" -> "Le bateau voguait sur l'océan infini. L'horizon était une ligne brisée entre le ciel et la mer. Personne ne savait ce qui nous attendait."
+        "adventure" -> "Le bateau voguait sur l'océan infini. L'horizon était une ligne brisée entre le ciel et la mer."
         "fantasy" -> "La porte lumineuse s'ouvrit sur un monde inconnu. Des créations d'argent et d'or nous attendaient au-delà du voile."
         else -> "Le soleil se couchait sur la ville. Les rues se vidaient doucement. Un silence paisible envahit les trottoirs déserts."
     }
@@ -477,7 +447,7 @@ fun SongTab(
                     Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onBack).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
                     Text("🎵 French Songs", style = T.screenTitle, color = Ink)
                 }
-                Text("Offline French songs · Stromae, Indila, and more", style = T.secondary, color = InkSoft)
+                Text("${songs.size} songs · Offline · Stromae, Indila, and more", style = T.secondary, color = InkSoft)
             }
             item {
                 OutlinedSearchField("Search songs...", searchQuery) { searchQuery = it }
@@ -498,9 +468,6 @@ fun SongTab(
                         )
                     }
                 }
-            }
-            item {
-                Text("${songs.filter { selectedArtist == "All" || it.artist == selectedArtist }.filter { searchQuery.isBlank() || it.title.lowercase().contains(searchQuery.lowercase()) || it.artist.lowercase().contains(searchQuery.lowercase()) }.size} songs found", style = T.caption, color = InkMuted)
             }
             items(songs.filter { selectedArtist == "All" || it.artist == selectedArtist }.filter { searchQuery.isBlank() || it.title.lowercase().contains(searchQuery.lowercase()) || it.artist.lowercase().contains(searchQuery.lowercase()) }) { song ->
                 SongCard(song) { onSongClick(song) }
@@ -528,6 +495,7 @@ private fun SongCard(song: Song, onClick: () -> Unit) {
 
 @Composable
 fun SongDetailScreen(song: Song, onBack: () -> Unit) {
+    val context = LocalContext.current
     val scrollState = rememberScrollState()
     AppBackground(tint = Lavender) {
         Column(
@@ -551,7 +519,6 @@ fun SongDetailScreen(song: Song, onBack: () -> Unit) {
             }
             Spacer(Modifier.padding(Sp.sm))
             BigButton("🖨️ Print Lyrics", onClick = {
-                val context = LocalContext.current
                 val shareText = "🎵 ${song.title} - ${song.artist}\n${song.year}\n\n🇫🇷 ${song.frLyrics}\n\n🇬🇧 ${song.enTranslation}"
                 val intent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                     type = "text/plain"
@@ -560,7 +527,7 @@ fun SongDetailScreen(song: Song, onBack: () -> Unit) {
                 context.startActivity(android.content.Intent.createChooser(intent, "Share ${song.title}"))
             })
             BigButton("💾 Download Lyrics", color = Turquoise, onClick = {
-                val file = java.io.File(LocalContext.current.filesDir, "${song.id}.txt")
+                val file = File(context.filesDir, "${song.id}.txt")
                 file.writeText("${song.title}\n${song.frLyrics}\n\n${song.enTranslation}")
             })
         }
@@ -570,3 +537,5 @@ fun SongDetailScreen(song: Song, onBack: () -> Unit) {
 fun parseLyrics(text: String): List<String> {
     return text.lines().filter { it.isNotBlank() && !it.startsWith("[") && !it.startsWith("(") }
 }
+
+fun getSongById(id: String): Song? = FRENCH_SONGS.find { it.id == id }
