@@ -38,7 +38,6 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.francofun.R
 import kotlinx.coroutines.launch
 
 @Composable
@@ -153,7 +152,7 @@ fun CustomLessonDialog(store: Store, onClose: () -> Unit, onOpen: (Lesson) -> Un
     var meaning by remember { mutableStateOf("") }
     var err by remember { mutableStateOf("") }
     val phrases = remember { mutableStateListOf<Phrase>() }
-    PhotoBg(R.drawable.bg_custom_lessons) {
+    AppBackground(tint = VioletSoft) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Sp.lg), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onClose).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })

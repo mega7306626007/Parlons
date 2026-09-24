@@ -40,7 +40,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.francofun.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -58,13 +57,19 @@ fun CallScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, onBack: () 
     val lang = store.helpLang
     var scenario by remember { mutableStateOf(Scenario.FREE) }
     var reg by remember { mutableStateOf(Reg.DEBUTANT) }
+    var simbaSpeaking by remember { mutableStateOf(false) }
     // Scenario + register chosen by the learner (was hard-coded FREE/DEBUTANT).
     val track = trackFor(scenario, reg)
+
+    DisposableEffect(speaker) {
+        speaker.onSpeakingChange = { simbaSpeaking = it }
+        onDispose { speaker.onSpeakingChange = null; speaker.stop() }
+    }
 
     // Changing scenario/register before a call resets the script.
     LaunchedEffect(scenario) { if (scriptFor(scenario).intermediate.isEmpty()) reg = Reg.DEBUTANT }
 
-    DisposableEffect(Unit) { onDispose { speaker.stop(); speaker.onDoneListener = null } }
+    DisposableEffect(Unit) { onDispose { speaker.stop() } }
 
     fun botSay(turn: Turn) {
         thinking = true
@@ -130,7 +135,7 @@ fun CallScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, onBack: () 
         speaker.onDoneListener = null
     }
 
-    PhotoBg(R.drawable.bg_voice_call) {
+    AppBackground(tint = TurquoiseSoft) {
     Column(Modifier.fillMaxSize().padding(Sp.lg), horizontalAlignment = Alignment.CenterHorizontally) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = { endCall(); onBack() }).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
@@ -158,26 +163,42 @@ fun CallScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, onBack: () 
         }
         Box(
             Modifier.size(140.dp).clip(CircleShape)
-                .background(if (mic.listening) Green else if (thinking) Gold else Blue)
+                .background(
+                    when {
+                        mic.listening -> Emerald
+                        simbaSpeaking || thinking -> Gold
+                        awaitingReply && inCall -> Cobalt
+                        inCall -> CobaltDim
+                        else -> Border
+                    }
+                )
                 .semantics { contentDescription = "Tap to speak"; role = Role.Button }
-                .clickable(enabled = inCall && !thinking) { error = ""; mic.press() },
+                .clickable(enabled = inCall && !thinking && !simbaSpeaking) { error = ""; mic.press() },
             contentAlignment = Alignment.Center
         ) {
-            Text(when { mic.listening -> "🎤"; thinking -> "💭"; else -> "🦁" }, fontSize = 64.sp)
+            Text(
+                when {
+                    mic.listening -> "🎤"
+                    simbaSpeaking || thinking -> "💭"
+                    else -> "🦁"
+                },
+                fontSize = 64.sp
+            )
         }
-        if (mic.listening) {
+        if (mic.listening || simbaSpeaking) {
             Spacer(Modifier.size(Sp.xs))
-            VoiceWaveform(active = true, color = Blue, modifier = Modifier.fillMaxWidth().padding(horizontal = Sp.xl))
+            VoiceWaveform(active = true, color = if (simbaSpeaking) Gold else Turquoise, modifier = Modifier.fillMaxWidth().padding(horizontal = Sp.xl))
         }
         Spacer(Modifier.size(Sp.sm))
         Text(
             when {
                 !inCall -> lang.t("Tap Start to talk hands-free", "Gusa Anza kuongea", "Gusa Start kuongea")
                 mic.listening -> lang.t("Listening… speak French!", "Ninasikiliza… ongea Kifaransa!", "Naskiza… ongea French!")
+                simbaSpeaking -> "🦁 Simba parle…"
                 thinking -> "Simba réfléchit…"
                 awaitingReply -> lang.t("Tap the mic to reply 🎤", "Gusa maiki kujibu 🎤", "Gusa mic kujibu 🎤")
                 else -> lang.t("Simba speaks, then you reply", "Simba anaongea, kisha unajibu", "Simba anaongea, kisha unajibu")
-            }, style = T.secondary, color = InkSoft
+            }, style = T.secondary, color = InkSoft, textAlign = androidx.compose.ui.text.style.TextAlign.Center
         )
         if (error.isNotBlank()) Text(error, style = T.secondary, color = Red, modifier = Modifier.padding(Sp.xs))
         Spacer(Modifier.size(Sp.sm))

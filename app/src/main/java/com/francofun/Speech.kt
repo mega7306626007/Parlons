@@ -71,32 +71,60 @@ class Speaker(private val ctx: Context) : TextToSpeech.OnInitListener {
 
     var onDoneListener: ((String) -> Unit)? = null
 
+    /** UI signal: true while TTS is actively speaking (chat/call/lesson voice states). */
+    var isSpeaking: Boolean = false
+        private set
+    var onSpeakingChange: ((Boolean) -> Unit)? = null
+
+    private fun setSpeaking(v: Boolean) {
+        if (isSpeaking != v) {
+            isSpeaking = v
+            onSpeakingChange?.invoke(v)
+        }
+    }
+
     fun speak(text: String, slow: Boolean = false, onDone: (() -> Unit)? = null, tag: String = UUID.randomUUID().toString()) {
         // Offline-first sessions (or a failed system engine) prefer bundled Piper (§9.4).
+        setSpeaking(true)
         if (preferOffline || systemFailed) {
-            if (offlineTts?.speak(text, slow, onDone) == true) return
+            if (offlineTts?.speak(text, slow) { setSpeaking(false); onDone?.invoke() } == true) return
             // Piper unavailable: use the system voice if there is one, else stay silent
             // (no install nag in an offline session).
-            if (!ready) return
+            if (!ready) { setSpeaking(false); return }
         }
         if (!ready) {
             pending = text
+            setSpeaking(false)
             if (!warned) {
                 warned = true
                 Toast.makeText(ctx, "French voice not ready. Install French in Google Text-to-speech settings.", Toast.LENGTH_LONG).show()
                 runCatching { ctx.startActivity(Intent(TextToSpeech.Engine.ACTION_INSTALL_TTS_DATA).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
             }
-            onDone?.let { onDoneListener = { onDone() } }
+            onDone?.let { onDoneListener = { setSpeaking(false); onDone() } }
             return
         }
-        if (onDone != null) onDoneListener = { if (it == tag) onDone() }
+        if (onDone != null || true) {
+            val userDone = onDone
+            onDoneListener = { id ->
+                if (id.isEmpty() || id == tag) {
+                    setSpeaking(false)
+                    userDone?.invoke()
+                }
+            }
+        }
         tts?.setSpeechRate(if (slow) 0.6f else if (nativeRate) 1.0f else 0.9f)
         tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, tag)
     }
 
-    fun stop() { tts?.stop(); offlineTts?.stop() }
+    fun stop() {
+        tts?.stop(); offlineTts?.stop()
+        setSpeaking(false)
+    }
 
-    fun shutdown() { tts?.stop(); tts?.shutdown(); tts = null; offlineTts?.shutdown(); offlineTts = null }
+    fun shutdown() {
+        tts?.stop(); tts?.shutdown(); tts = null; offlineTts?.shutdown(); offlineTts = null
+        setSpeaking(false)
+    }
 }
 
 /** French speech recognition: Android system first, bundled Vosk as silent fallback (§9.4). */

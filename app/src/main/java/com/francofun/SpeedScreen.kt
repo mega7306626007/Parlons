@@ -33,7 +33,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.francofun.R
 import kotlinx.coroutines.delay
 
 /** §5.13 speed round: 60-second flashcard sprint over already-seen phrases. Fun + daily-goal padding. */
@@ -88,7 +87,7 @@ fun SpeedScreen(store: Store, speaker: Speaker, onExit: () -> Unit) {
         (wrong + right).shuffled()
     }
 
-    PhotoBg(R.drawable.bg_speed_round) {
+    AppBackground(tint = CoralSoft) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.padding(horizontal = Sp.md, vertical = Sp.sm), verticalAlignment = Alignment.CenterVertically) {
             Text("✕", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onExit).padding(end = Sp.sm).semantics { contentDescription = "Exit speed round"; role = Role.Button })

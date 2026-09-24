@@ -27,6 +27,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -48,7 +49,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.francofun.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -158,6 +158,11 @@ fun ChatScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, chain: Bool
     }
 
     val mic = rememberMic(onResult = { text -> send(text) }, env = speechEnv)
+    var simbaSpeaking by remember { mutableStateOf(false) }
+    DisposableEffect(speaker) {
+        speaker.onSpeakingChange = { simbaSpeaking = it }
+        onDispose { speaker.onSpeakingChange = null }
+    }
 
     LaunchedEffect(scenario, reg) { restart() }
     // Intermediate register only where written (§6.1); fall back silently otherwise.
@@ -167,7 +172,7 @@ fun ChatScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, chain: Bool
         if (n > 0) listState.animateScrollToItem(n - 1)
     }
 
-    PhotoBg(R.drawable.bg_conversation) {
+    AppBackground(tint = CobaltSoft) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.padding(horizontal = Sp.md, vertical = Sp.sm), verticalAlignment = Alignment.CenterVertically) {
             Text("←", style = T.section, color = InkMuted, modifier = Modifier.clickable(onClick = onBack).padding(end = Sp.sm).semantics { contentDescription = "Back"; role = Role.Button })
@@ -220,8 +225,18 @@ fun ChatScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, chain: Bool
                     onToggleHelp = { msgs[i] = m.copy(showHelp = !m.showHelp) }
                 )
             }
-            if (typing) {
-                item { Text("Simba écrit… ✍️", style = T.secondary, color = InkMuted) }
+            if (typing || simbaSpeaking) {
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("🦁", fontSize = 20.sp, modifier = Modifier.padding(end = Sp.xs))
+                        if (simbaSpeaking) {
+                            VoiceWaveform(active = true, barCount = 12, color = Cobalt, modifier = Modifier.widthIn(max = 120.dp))
+                            Text("  Simba speaks…", style = T.secondary, color = InkSoft)
+                        } else {
+                            Text("Simba écrit… ✍️", style = T.secondary, color = InkMuted)
+                        }
+                    }
+                }
             }
         }
 
