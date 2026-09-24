@@ -71,7 +71,7 @@ class Store(ctx: Context) {
     val xpBoostActive: Boolean get() = System.currentTimeMillis() < xpBoostUntil
     val xpBoostMsLeft: Long get() = (xpBoostUntil - System.currentTimeMillis()).coerceAtLeast(0L)
 
-    /** Last 30 days of activity (epoch days) for the streak calendar. */
+    /** Last 90 days of activity (epoch days) for heatmaps. 90 ≈ 13 weeks. */
     private val activeDaySet = mutableSetOf<Long>().apply {
         sp.getString("activeDays", "")?.split(",")?.forEach { s ->
             s.toLongOrNull()?.let { add(it) }
@@ -80,7 +80,7 @@ class Store(ctx: Context) {
 
     private fun markActive(day: Long = LocalDate.now().toEpochDay()) {
         activeDaySet.add(day)
-        val cutoff = day - 30
+        val cutoff = day - 90
         activeDaySet.retainAll { it >= cutoff }
         sp.edit().putString("activeDays", activeDaySet.joinToString(",")).apply()
     }
@@ -89,6 +89,52 @@ class Store(ctx: Context) {
     fun last7DaysActivity(): List<Boolean> {
         val today = LocalDate.now().toEpochDay()
         return (6 downTo 0).map { (today - it) in activeDaySet }
+    }
+
+    /** 13-week contribution heatmap rows (oldest week first, 7 cells/row). */
+    fun activityHeatmap(): List<List<Boolean>> {
+        val today = LocalDate.now().toEpochDay()
+        val start = today - 90
+        return (0 until 13).map { week ->
+            (0 until 7).map { day -> (start + week * 7 + day) in activeDaySet }
+        }
+    }
+
+    // ── League (offline settle each Monday / on first open of a new week) ──
+    var leagueTierId by mutableStateOf(sp.getString("leagueTier", "bronze") ?: "bronze")
+        private set
+    var leagueWeekStart by mutableLongStateOf(sp.getLong("leagueWeek", -1L))
+        private set
+    /** Weeks spent in the current league tier (for demotion resistance display). */
+    var perfectWeeks by mutableIntStateOf(sp.getInt("perfectWeeks", 0))
+        private set
+
+    /** True when every day this week had XP ≥ daily goal (or ≥1 lesson on goal days). */
+    fun perfectWeek(): Boolean {
+        val week = weeklyXp()
+        val goal = dailyGoalXp.coerceAtLeast(1)
+        // A perfect week = every day hit the goal (or at least 1 XP if goal is high).
+        return week.all { it >= goal || it >= 1 && goal > 50 && it >= goal / 2 }
+    }
+
+    /** Call once per session: settle last week's league if the week rolled over. */
+    fun maybeSettleLeague() {
+        val week = LocalDate.now().toEpochDay() / 7
+        if (leagueWeekStart == week) return
+        val lastWeekXp = (0 until 7).sumOf { sp.getInt(dayKey("dxp", week * 7 - 7 + it), 0) }
+        // Only settle if we have history (don't demote brand-new installs).
+        if (leagueWeekStart >= 0) {
+            when (val out = settleLeague(leagueTierId, lastWeekXp)) {
+                is LeagueOutcome.Promote -> leagueTierId = out.tier.id
+                is LeagueOutcome.Demote -> leagueTierId = out.tier.id
+                is LeagueOutcome.Stay -> {}
+            }
+            if (perfectWeek()) perfectWeeks += 1
+        }
+        leagueWeekStart = week
+        sp.edit().putString("leagueTier", leagueTierId)
+            .putLong("leagueWeek", leagueWeekStart)
+            .putInt("perfectWeeks", perfectWeeks).apply()
     }
 
     val stars = mutableStateMapOf<String, Int>().apply {
@@ -149,6 +195,7 @@ class Store(ctx: Context) {
     init {
         rollDay()
         regenHearts()
+        maybeSettleLeague()
         // load custom lessons
         runCatching {
             val raw = sp.getString("customLessons", "[]") ?: "[]"
@@ -449,8 +496,10 @@ class Store(ctx: Context) {
         }.forEach { e.remove(it) }
         e.remove("lastHeartTs").remove("dailyDay")
         streakFreezes = 0; xpBoostUntil = 0L; activeDaySet.clear()
+        leagueTierId = "bronze"; leagueWeekStart = -1L; perfectWeeks = 0
         keys.filter { k -> k.startsWith("chest_") }.forEach { e.remove(it) }
         e.remove("activeDays").remove("freezes").remove("boostUntil")
+            .remove("leagueTier").remove("leagueWeek").remove("perfectWeeks")
         e.putInt("xp", 0).putInt("gems", START_GEMS).putInt("hearts", MAX_HEARTS).putInt("streak", 0).putLong("lastDay", -1L)
             .putInt("lessonsDone", 0).putInt("perfect", 0).putInt("speakOk", 0).putInt("chatN", 0)
             .putString("srs", "{}").apply()

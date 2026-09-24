@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
@@ -135,6 +136,10 @@ fun StatsScreen(store: Store, onBack: () -> Unit) {
             Text("This week: $weekSum XP • ${store.streak}-day streak • ${store.lessonsDone} lessons done • ${store.wordsLearnedCount()} words learned", style = T.secondary, color = InkSoft)
             Text(pace, style = T.label, color = Blue)
         }
+
+        // Local league board (offline rivals paced from your average)
+        LeagueCard(store, weekSum, week.average())
+
         Text("Last 7 days XP", style = T.bodySemi, color = Ink)
         Box(Modifier.fillMaxWidth().height(160.dp).clip(Rad.xl).background(Surface).border(1.dp, Color(0xFFE3E7F2), Rad.xl).padding(Sp.sm)) {
             Canvas(Modifier.fillMaxSize()) {
@@ -148,6 +153,10 @@ fun StatsScreen(store: Store, onBack: () -> Unit) {
                 listOf("M", "T", "W", "T", "F", "S", "S").forEach { Text(it, style = T.caption) }
             }
         }
+
+        // 13-week activity heatmap (research: glanceable consistency history)
+        ActivityHeatmap(store)
+
         Text("Trophies 🏆", style = T.bodySemi, color = Ink)
         BADGES.forEach { b ->
             val got = store.badges[b.id] == true
@@ -166,6 +175,95 @@ private fun StatBox(emoji: String, value: String, label: String) {
         Text(emoji, fontSize = 22.sp)
         Text(value, style = T.stat, color = Ink)
         Text(label, style = T.caption)
+    }
+}
+
+/* ── Local league (offline rivals) ── */
+
+@Composable
+private fun LeagueCard(store: Store, weekXp: Int, avg: Double) {
+    val tier = LEAGUES.find { it.id == store.leagueTierId } ?: LEAGUES.first()
+    val board = remember(weekXp, avg, store.leagueTierId) { buildLeagueBoard(weekXp, avg) }
+    val yourRank = board.indexOfFirst { it.isYou } + 1
+
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(Rad.xl)
+            .background(VioletSoft)
+            .border(1.dp, Color(0xFFE9D5FF), Rad.xl)
+            .padding(Sp.md),
+        verticalArrangement = Arrangement.spacedBy(Sp.xs)
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("${tier.emoji} ${tier.name} League", style = T.bodySemi, color = Violet, modifier = Modifier.weight(1f))
+            Text("#$yourRank this week", style = T.label, color = Ink)
+        }
+        Text(
+            if (weekXp >= tier.promoteXp) "🟢 Promotion zone — keep it up!"
+            else if (weekXp < tier.demoteXp && tier.demoteXp > 0) "🔴 Relegation zone — one lesson pulls you up"
+            else "⚪ Safe · promote at ${tier.promoteXp} XP",
+            style = T.caption, color = InkSoft
+        )
+        if (store.perfectWeeks > 0) {
+            Text("✨ ${store.perfectWeeks} perfect week${if (store.perfectWeeks == 1) "" else "s"}", style = T.caption, color = Gold)
+        }
+        board.forEachIndexed { i, r ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(Rad.sm)
+                    .background(if (r.isYou) GoldSoft else Color.Transparent)
+                    .padding(horizontal = Sp.xs, vertical = 2.dp)
+            ) {
+                Text("${i + 1}", style = T.caption, color = InkMuted, modifier = Modifier.padding(end = Sp.sm))
+                Text(r.emoji, fontSize = 14.sp, modifier = Modifier.padding(end = Sp.xs))
+                Text(
+                    r.name,
+                    style = if (r.isYou) T.label else T.secondary,
+                    color = if (r.isYou) Ink else InkSoft,
+                    modifier = Modifier.weight(1f)
+                )
+                Text("${r.weeklyXp} XP", style = T.caption, color = if (r.isYou) Violet else InkMuted)
+            }
+        }
+    }
+}
+
+/* ── 13-week activity heatmap ── */
+
+@Composable
+private fun ActivityHeatmap(store: Store) {
+    val rows = remember(store.srs.size, store.lessonsDone) { store.activityHeatmap() }
+    Text("Activity · last 13 weeks", style = T.bodySemi, color = Ink)
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(Rad.xl)
+            .background(Surface)
+            .border(1.dp, Color(0xFFE3E7F2), Rad.xl)
+            .padding(Sp.sm),
+        verticalArrangement = Arrangement.spacedBy(3.dp)
+    ) {
+        rows.forEach { week ->
+            Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                week.forEach { active ->
+                    Box(
+                        Modifier
+                            .size(14.dp)
+                            .clip(Rad.sm)
+                            .background(
+                                when {
+                                    active -> Emerald
+                                    else -> Border
+                                }
+                            )
+                    )
+                }
+            }
+        }
+        Text("🟩 active day · ⬜ rest", style = T.caption, color = InkMuted)
     }
 }
 

@@ -88,3 +88,66 @@ fun questProgress(questId: String, todayXp: Int, todayLessons: Int, todaySpeak: 
     "review10" -> todayReview
     else -> 0
 }
+
+// ---- Local leagues (offline, paced against your own history + fixed rivals) ----
+data class LeagueTier(
+    val id: String,
+    val emoji: String,
+    val name: String,
+    /** Weekly XP needed to stay promoted (top zone). */
+    val promoteXp: Int,
+    /** Weekly XP below which you're relegated. */
+    val demoteXp: Int
+)
+
+val LEAGUES: List<LeagueTier> = listOf(
+    LeagueTier("bronze", "🥉", "Bronze", 120, 0),
+    LeagueTier("silver", "🥈", "Silver", 250, 80),
+    LeagueTier("gold", "🥇", "Gold", 400, 150),
+    LeagueTier("platinum", "💎", "Platinum", 600, 250),
+    LeagueTier("diamond", "🏆", "Diamond", 900, 400)
+)
+
+fun leagueIndexForXp(weeklyXp: Int): Int {
+    // Highest tier whose demote threshold the learner clears.
+    var idx = 0
+    LEAGUES.forEachIndexed { i, t -> if (weeklyXp >= t.demoteXp) idx = i }
+    return idx
+}
+
+/** Result of this week's league settle: STAY / PROMOTE / DEMOTE (+ new tier). */
+sealed interface LeagueOutcome {
+    data class Stay(val tier: LeagueTier) : LeagueOutcome
+    data class Promote(val tier: LeagueTier) : LeagueOutcome
+    data class Demote(val tier: LeagueTier) : LeagueOutcome
+}
+
+fun settleLeague(currentTierId: String, weeklyXp: Int): LeagueOutcome {
+    val idx = LEAGUES.indexOfFirst { it.id == currentTierId }.coerceAtLeast(0)
+    val cur = LEAGUES[idx]
+    return when {
+        weeklyXp >= cur.promoteXp && idx < LEAGUES.lastIndex ->
+            LeagueOutcome.Promote(LEAGUES[idx + 1])
+        weeklyXp < cur.demoteXp && idx > 0 ->
+            LeagueOutcome.Demote(LEAGUES[idx - 1])
+        else -> LeagueOutcome.Stay(cur)
+    }
+}
+
+/**
+ * Offline board: you + 4 fixed rivals whose weekly XP is derived from your
+ * own 7-day average so the ladder always feels alive without a server.
+ */
+data class LeagueRival(val name: String, val emoji: String, val weeklyXp: Int, val isYou: Boolean = false)
+
+fun buildLeagueBoard(youXp: Int, avgXp: Double): List<LeagueRival> {
+    val base = avgXp.coerceAtLeast(20.0)
+    val rivals = listOf(
+        LeagueRival("Amina", "🧑🏾", (base * 1.35).toInt()),
+        LeagueRival("Jules", "🧑🏼", (base * 1.1).toInt()),
+        LeagueRival("Zawadi", "👩🏾", (base * 0.85).toInt()),
+        LeagueRival("Marc", "🧑🏻", (base * 0.55).toInt())
+    )
+    return (rivals + LeagueRival("You", "🦁", youXp, isYou = true))
+        .sortedByDescending { it.weeklyXp }
+}
