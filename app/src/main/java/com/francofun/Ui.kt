@@ -4,6 +4,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -21,9 +23,12 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -31,138 +36,207 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
-/* ─────────────────────────────────────────────
-   COLOR SYSTEM — semantic palette (§3)
-   ───────────────────────────────────────────── */
-val Blue     = Color(0xFF2B59C3)
-val BlueLight  = Color(0xFFE8EEFF)
-val BlueDim    = Color(0xFF5B7FE0)
-val Red      = Color(0xFFEF4135)
-val RedLight   = Color(0xFFFFDAD6)
-val Green    = Color(0xFF2E9E4F)
-val GreenLight = Color(0xFFD7F5D3)
-val Gold     = Color(0xFFFFB400)
-val Cream    = Color(0xFFF5F7FF)
-val Ink      = Color(0xFF1F2937)
-val InkSoft  = Color(0xFF444B5E)
-val InkMuted = Color(0xFF8A8D9A)
-val Pink     = Color(0xFFE84393)
-val White    = Color(0xFFFFFFFF)
-val Surface  = Color(0xFFFFFFFF)
+/* ═══════════════════════════════════════════════
+   PARLONS DESIGN SYSTEM — original identity
+   Fun · Friendly · Smart · Colorful · Polished
+   NOT Duolingo. NOT corporate. NOT photo-heavy.
+   ═══════════════════════════════════════════════ */
 
-/* Semantic aliases */
-val Primary     = Blue
-val Secondary   = Red
-val Tertiary    = Green
-val OnPrimary   = White
-val OnSurface   = Ink
+/* ── Primary: deep electric cobalt ── */
+val Cobalt      = Color(0xFF1E4FE0)
+val CobaltDeep  = Color(0xFF153CB8)
+val CobaltSoft  = Color(0xFFE8EEFF)
+val CobaltDim   = Color(0xFF5B7FE0)
+
+/* ── Secondary: violet / indigo ── */
+val Violet      = Color(0xFF7C3AED)
+val VioletSoft  = Color(0xFFF3E8FF)
+
+/* ── Accent: warm gold ── */
+val Gold        = Color(0xFFFFB400)
+val GoldSoft    = Color(0xFFFFF4D6)
+
+/* ── Support colors ── */
+val Coral       = Color(0xFFFF6B5B)
+val CoralSoft   = Color(0xFFFFE5E0)
+val Turquoise   = Color(0xFF0D9488)
+val TurquoiseSoft = Color(0xFFD6F5F0)
+val Pink        = Color(0xFFEC4899)
+val PinkSoft    = Color(0xFFFCE7F3)
+val Emerald     = Color(0xFF10B981)
+val EmeraldSoft = Color(0xFFD1FAE5)
+
+/* ── Neutrals ── */
+val Ink         = Color(0xFF0F172A)
+val InkSoft     = Color(0xFF475569)
+val InkMuted    = Color(0xFF94A3B8)
+val White       = Color(0xFFFFFFFF)
+val Surface     = Color(0xFFFFFFFF)
+val Cream       = Color(0xFFF8FAFF)
+val Lavender    = Color(0xFFF5F3FF)
+val WarmNeutral = Color(0xFFFFFBF5)
+val Border      = Color(0xFFE2E8F0)
+val BorderStrong = Color(0xFFCBD5E1)
+
+/* ── Legacy aliases (keep existing call sites compiling) ── */
+val Blue        = Cobalt
+val BlueLight   = CobaltSoft
+val BlueDim     = CobaltDim
+val Red         = Coral
+val RedLight    = CoralSoft
+val Green       = Emerald
+val GreenLight  = EmeraldSoft
+
+/* ── Semantic aliases ── */
+val Primary      = Cobalt
+val Secondary    = Violet
+val Tertiary     = Turquoise
+val OnPrimary    = White
+val OnSurface    = Ink
 val OnSurfaceMuted = InkMuted
-val SurfaceBg   = Cream
-val Error       = Red
-val Success     = Green
-val Warning     = Gold
-val Info        = Blue
+val SurfaceBg    = Cream
+val Error        = Coral
+val Success      = Emerald
+val Warning      = Gold
+val Info         = Cobalt
+
+/* ── Functional color roles (§3) ── */
+val ColorLearning   get() = Cobalt      // learning / navigation
+val ColorReward     get() = Gold        // rewards / achievement
+val ColorSpecial    get() = Violet      // special / AI features
+val ColorEnergy     get() = Coral       // energy / challenges
+val ColorVoice      get() = Turquoise   // voice / conversation
+val ColorMistake    get() = Coral       // mistakes / warnings
+val ColorCorrect    get() = Emerald     // correct answers
 
 private val LightScheme = lightColorScheme(
-    primary = Blue, secondary = Red, tertiary = Green,
+    primary = Cobalt, secondary = Violet, tertiary = Turquoise,
     background = Cream, surface = Surface, onSurface = Ink,
     onSurfaceVariant = InkSoft, onPrimary = White,
-    error = Red, inverseSurface = Ink, inverseOnSurface = White
+    error = Coral, inverseSurface = Ink, inverseOnSurface = White
 )
 private val DarkScheme = darkColorScheme(
-    primary = Color(0xFF8AA6FF), secondary = Color(0xFFFF8A80), tertiary = Color(0xFF7BD88F),
-    background = Color(0xFF12141C), surface = Color(0xFF1D2030), onSurface = Color(0xFFE8EAF2),
-    onSurfaceVariant = Color(0xFFB0B5C8), onPrimary = Ink,
-    error = Color(0xFFFF8A80), inverseSurface = Color(0xFFE8EAF2), inverseOnSurface = Ink
+    primary = Color(0xFF8AA6FF), secondary = Color(0xFFC4B5FD), tertiary = Color(0xFF5EEAD4),
+    background = Color(0xFF0B1020), surface = Color(0xFF151B2E), onSurface = Color(0xFFE8EAF6),
+    onSurfaceVariant = Color(0xFFA8AEC8), onPrimary = Color(0xFF0B1020),
+    error = Color(0xFFFF8A80), inverseSurface = Color(0xFFE8EAF6), inverseOnSurface = Color(0xFF0B1020)
 )
 
-/* ─────────────────────────────────────────────
-   TYPOGRAPHY — deliberate hierarchy (§3)
-   ───────────────────────────────────────────── */
+/* ── Typography — no baked-in colors (dark-mode safe) ── */
 object T {
-    val display   = androidx.compose.ui.text.TextStyle(fontSize = 34.sp, fontWeight = FontWeight.ExtraBold)
-    val screenTitle = androidx.compose.ui.text.TextStyle(fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
-    val section   = androidx.compose.ui.text.TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold)
-    val body      = androidx.compose.ui.text.TextStyle(fontSize = 16.sp)
-    val bodySemi  = androidx.compose.ui.text.TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
-    val secondary = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, color = InkSoft)
-    val caption   = androidx.compose.ui.text.TextStyle(fontSize = 12.sp, color = InkMuted)
-    val label     = androidx.compose.ui.text.TextStyle(fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-    val number    = androidx.compose.ui.text.TextStyle(fontSize = 28.sp, fontWeight = FontWeight.ExtraBold)
-    val vocab     = androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold)
-    val stat      = androidx.compose.ui.text.TextStyle(fontSize = 18.sp, fontWeight = FontWeight.ExtraBold)
+    val display    = TextStyle(fontSize = 32.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 38.sp)
+    val screenTitle = TextStyle(fontSize = 26.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 32.sp)
+    val section    = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold, lineHeight = 26.sp)
+    val body       = TextStyle(fontSize = 16.sp, lineHeight = 22.sp)
+    val bodySemi   = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.SemiBold, lineHeight = 22.sp)
+    val secondary  = TextStyle(fontSize = 14.sp, lineHeight = 20.sp) // color set at call site
+    val caption    = TextStyle(fontSize = 12.sp, lineHeight = 16.sp) // color set at call site
+    val label      = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.SemiBold, lineHeight = 18.sp)
+    val number     = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 32.sp)
+    val vocab      = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.Bold, lineHeight = 24.sp)
+    val stat       = TextStyle(fontSize = 18.sp, fontWeight = FontWeight.ExtraBold, lineHeight = 22.sp)
+    val button     = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Bold, lineHeight = 20.sp)
 }
 
-/* ─────────────────────────────────────────────
-   SPACING SCALE — 4dp base (§3)
-   ───────────────────────────────────────────── */
+/* ── Spacing — 4dp base ── */
 object Sp {
     val xxs = 4.dp; val xs = 8.dp; val sm = 12.dp; val md = 16.dp
     val lg = 20.dp; val xl = 24.dp; val xxl = 32.dp
 }
 
-/* ─────────────────────────────────────────────
-   CORNER RADII — deliberate values (§3)
-   ───────────────────────────────────────────── */
+/* ── Corner radii — friendlier, rounder ── */
 object Rad {
-    val sm  = RoundedCornerShape(4.dp)
-    val md  = RoundedCornerShape(8.dp)
-    val lg  = RoundedCornerShape(12.dp)
-    val xl  = RoundedCornerShape(16.dp)
-    val xxl = RoundedCornerShape(24.dp)
+    val sm   = RoundedCornerShape(8.dp)
+    val md   = RoundedCornerShape(12.dp)
+    val lg   = RoundedCornerShape(16.dp)
+    val xl   = RoundedCornerShape(20.dp)
+    val xxl  = RoundedCornerShape(28.dp)
     val full = RoundedCornerShape(50)
     val pill = RoundedCornerShape(999.dp)
 }
 
-/* ─────────────────────────────────────────────
-   THEME
-   ───────────────────────────────────────────── */
 @Composable
 fun ParlonsTheme(dark: Boolean = false, content: @Composable () -> Unit) {
     MaterialTheme(colorScheme = if (dark) DarkScheme else LightScheme, content = content)
 }
 
-/* ─────────────────────────────────────────────
-   COMPONENTS — backward-compatible signatures
-   ───────────────────────────────────────────── */
+/* ═══════════════════════════════════════════════
+   COMPONENTS — tactile, friendly, game-like
+   ═══════════════════════════════════════════════ */
 
+/** Primary CTA — large, high-contrast, tactile press feedback. */
 @Composable
-fun BigButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true, color: Color = Blue) {
-    Button(
-        onClick = onClick, enabled = enabled,
-        shape = Rad.xl,
-        colors = ButtonDefaults.buttonColors(containerColor = color, disabledContainerColor = Color(0xFFD0D5E0)),
-        modifier = modifier.fillMaxWidth().height(54.dp)
-    ) { Text(text, fontWeight = FontWeight.Bold, fontSize = 16.sp) }
+fun BigButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    color: Color = Cobalt
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val lift = if (pressed) 0.dp else 3.dp
+    val shadowColor = if (color == Cobalt) CobaltDeep else color.copy(alpha = 0.45f)
+    Box(
+        modifier
+            .fillMaxWidth()
+            .shadow(lift, if (pressed) RoundedCornerShape(20.dp) else Rad.xl, spotColor = shadowColor)
+            .clip(Rad.xl)
+            .background(if (!enabled) Color(0xFFE2E8F0) else color)
+            .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick)
+            .height(54.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text,
+            style = T.button,
+            color = if (!enabled) InkMuted else White
+        )
+    }
 }
 
+/** Secondary button — lighter visual weight. */
 @Composable
-fun OutlinedButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = Blue) {
-    Button(
-        onClick = onClick, shape = Rad.xl,
-        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent, contentColor = color),
-        modifier = modifier.fillMaxWidth().height(54.dp).border(1.5.dp, color, Rad.xl)
-    ) { Text(text, fontWeight = FontWeight.SemiBold, fontSize = 16.sp) }
+fun OutlinedButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, color: Color = Cobalt) {
+    Box(
+        modifier
+            .fillMaxWidth()
+            .clip(Rad.xl)
+            .background(color.copy(alpha = 0.10f))
+            .border(2.dp, color.copy(alpha = 0.35f), Rad.xl)
+            .clickable(onClick = onClick)
+            .height(54.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text, style = T.button, color = color)
+    }
 }
 
+/** Pill chip — selectable filter / option. */
 @Composable
 fun Chip(text: String, selected: Boolean, label: String = text, onClick: () -> Unit) {
     Box(
         Modifier
             .clip(Rad.pill)
-            .background(if (selected) Blue else Surface)
-            .border(1.dp, if (selected) Blue else Color(0xFFD0D5E0), Rad.pill)
+            .background(if (selected) Cobalt else Surface)
+            .border(2.dp, if (selected) Cobalt else Border, Rad.pill)
             .semantics(mergeDescendants = true) { contentDescription = label; role = Role.Button }
             .clickable(onClick = onClick)
-            .heightIn(min = 48.dp)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
+            .heightIn(min = 44.dp)
+            .padding(horizontal = 16.dp, vertical = 10.dp),
         contentAlignment = Alignment.Center
     ) {
-        Text(text, color = if (selected) White else Blue, fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+        Text(
+            text,
+            color = if (selected) White else InkSoft,
+            fontWeight = FontWeight.Bold,
+            fontSize = 14.sp
+        )
     }
 }
 
@@ -173,10 +247,27 @@ fun LangChips(store: Store) {
     }
 }
 
+/** Progress ring — gold for rewards, cobalt for learning. */
 @Composable
-fun ProgressRing(progress: Float, modifier: Modifier = Modifier, color: Color = Green) {
+fun ProgressRing(progress: Float, modifier: Modifier = Modifier, color: Color = Gold) {
     Canvas(modifier.size(52.dp)) {
-        drawArc(Color(0xFFE3E7F2), -90f, 360f, false, style = Stroke(8.dp.toPx(), cap = StrokeCap.Round))
+        drawArc(Border, -90f, 360f, false, style = Stroke(8.dp.toPx(), cap = StrokeCap.Round))
         drawArc(color, -90f, progress.coerceIn(0f, 1f) * 360f, false, style = Stroke(8.dp.toPx(), cap = StrokeCap.Round))
+    }
+}
+
+/** Themed screen background — clean color blocks, never photo wallpapers. */
+@Composable
+fun AppBackground(
+    modifier: Modifier = Modifier,
+    /** Optional soft tint wash for screen personality. */
+    tint: Color = Color.Transparent,
+    content: @Composable () -> Unit
+) {
+    Box(modifier.fillMaxWidth().background(Cream)) {
+        if (tint != Color.Transparent) {
+            Box(Modifier.matchParentSize().background(tint.copy(alpha = 0.35f)))
+        }
+        content()
     }
 }
