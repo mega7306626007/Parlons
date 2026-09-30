@@ -24,6 +24,7 @@ Downloaded specifically for Parlons (not bulk-scraped). Optimized for portrait m
 | `bg_food.webp` | Food/drink lessons (§39) | 1640772 | https://www.pexels.com/photo/1640772/ |
 | `bg_city_ctx.webp` | City/transport lessons (§39) | 378570 | https://www.pexels.com/photo/378570/ |
 | `bg_travel.webp` | Travel lessons (§39) | 346885 | https://www.pexels.com/photo/346885/ |
+| `simba_lion.jpg` | Simba mascot (real lion portrait, circular crop + mood grade in-app) | 13248515 | https://www.pexels.com/photo/portrait-of-lion-13248515/ |
 
 Selection criteria (§36, §48): realistic photography, natural light, negative space for UI, no prominent logos/trademarks, no copyrighted artwork, portrait-crop friendly, calm enough for text overlays.
 

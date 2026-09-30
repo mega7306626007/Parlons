@@ -71,10 +71,15 @@ private fun wrongMsg(lang: HelpLang): String = when (lang) {
 }
 
 @Composable
-fun LessonScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, lesson: Lesson, onExit: () -> Unit) {
+fun LessonScreen(
+    store: Store, speaker: Speaker, speechEnv: SpeechEnv, lesson: Lesson, onExit: () -> Unit,
+    onGuide: (String) -> Unit = {}
+) {
     // SRS due first (§6.4: gated by the learner's level ceiling)
     val due = remember(lesson) { duePhrases(lesson, store.srs, maxLevel = store.levelCeiling()) }
-    val questions = remember(lesson, store.helpLang) { buildQuestions(lesson, store.helpLang, 13, due) }
+    // Sessions scale with lesson size (13–20): longer lessons get longer sessions.
+    val sessionN = lesson.phrases.size.coerceIn(13, 20)
+    val questions = remember(lesson, store.helpLang) { buildQuestions(lesson, store.helpLang, sessionN, due) }
     var finishedCorrect by remember { mutableStateOf<Int?>(null) }
     var speakOk by remember { mutableIntStateOf(0) }
     var reward by remember { mutableStateOf<Pair<Int, Int>?>(null) }
@@ -96,7 +101,8 @@ fun LessonScreen(store: Store, speaker: Speaker, speechEnv: SpeechEnv, lesson: L
             LaunchedEffect(lesson.id) { reward = store.finishLesson(lesson.id, done, questions.size, speakOk, due.size) }
             val r = reward
             if (r == null) Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
-            else Finished(store, done, questions.size, r.first, r.second, lesson, onExit)
+            else Finished(store, done, questions.size, r.first, r.second, lesson, onExit, speakOk, due.size,
+                onGuide = { onGuide(lesson.unitId) })
         }
     }
 }
@@ -524,31 +530,112 @@ private fun OutOfHearts(lang: HelpLang, onExit: () -> Unit) {
 }
 
 @Composable
-private fun Finished(store: Store, correct: Int, total: Int, xp: Int, gems: Int, lesson: Lesson, onDone: () -> Unit) {
+private fun Finished(
+    store: Store, correct: Int, total: Int, xp: Int, gems: Int, lesson: Lesson, onDone: () -> Unit,
+    speakOk: Int = 0, reviewed: Int = 0, onGuide: () -> Unit = {}
+) {
     val perfect = correct == total
+    val ratio = if (total == 0) 0f else correct.toFloat() / total.toFloat()
+    val lang = store.helpLang
+    val mood = when {
+        perfect || ratio >= 0.9f -> MascotMood.CELEBRATING
+        ratio >= 0.7f -> MascotMood.HAPPY
+        else -> MascotMood.ENCOURAGING
+    }
     val ctx = LocalContext.current
     if (perfect) { Sounds.fanfare(store.soundOn); if (!animationsOff(ctx)) ConfettiOverlay(true) }
-    Column(Modifier.fillMaxSize().padding(Sp.xxl), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Mascot(if (perfect) MascotMood.CELEBRATING else MascotMood.HAPPY, size = 96.dp)
-        Spacer(Modifier.padding(Sp.sm))
-        Text(when (store.helpLang) { HelpLang.ENGLISH -> "Lesson complete!"; HelpLang.SWAHILI -> "Hongera! Umemaliza somo!"; HelpLang.SHENG -> "Umemaliza msee! Uko kali!" }, style = T.screenTitle, color = Cobalt, textAlign = TextAlign.Center)
-        Spacer(Modifier.padding(Sp.xs))
-        Text("$correct / $total correct", style = T.section, color = Ink)
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(Sp.xxl),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Sp.sm)
+    ) {
+        Mascot(mood, size = 96.dp)
+        Text(
+            when {
+                perfect -> lang.t("Flawless! 🏆", "Kamili! 🏆", "Perfect msee! 🏆")
+                ratio >= 0.9f -> lang.t("Excellent!", "Vizuri sana!", "Poa sana!")
+                ratio >= 0.7f -> lang.t("Solid work!", "Kazi nzuri!", "Uko sawa!")
+                else -> lang.t("Keep pushing!", "Endelea kupambana!", "Usicatch, jaribu tena!")
+            },
+            style = T.screenTitle, color = Cobalt, textAlign = TextAlign.Center
+        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            ProgressRing(ratio, color = if (ratio >= 0.7f) Emerald else Gold)
+            Spacer(Modifier.padding(Sp.sm))
+            Column {
+                Text("$correct / $total correct", style = T.section, color = Ink)
+                Text("${(ratio * 100).toInt()}% accuracy", style = T.caption, color = InkSoft)
+            }
+        }
+        if (speakOk > 0 || reviewed > 0) {
+            Text("🎤 $speakOk spoken right · 🔁 $reviewed reviewed", style = T.caption, color = InkSoft, textAlign = TextAlign.Center)
+        }
+        // What stuck: lesson phrases still sitting in the mistake notebook.
+        val fresh = remember(correct) { lesson.phrases.filter { store.mistakes.containsKey(it.key()) } }
+        if (fresh.isNotEmpty()) {
+            Spacer(Modifier.padding(Sp.xs))
+            Card {
+                Column(verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
+                    Text("🎯 To lock in (${fresh.size})", style = T.label, color = Coral)
+                    fresh.take(3).forEach { p ->
+                        Text("• ${p.fr} — ${p.meaning(store.helpLang)}", style = T.caption, color = InkSoft)
+                    }
+                    if (fresh.size > 3) Text("+${fresh.size - 3} more in your notebook", style = T.caption, color = InkMuted)
+                }
+            }
+        } else {
+            Spacer(Modifier.padding(Sp.xxs))
+            Text("✅ Clean run — nothing new in your notebook", style = T.caption, color = Emerald)
+        }
         if (!perfect) {
             val (vfr, vhelp) = remember { simbaVanne(store.helpLang) }
             Spacer(Modifier.padding(Sp.xxs))
             Text(vfr, style = T.secondary, textAlign = TextAlign.Center, color = InkSoft)
             if (vhelp.isNotBlank()) Text(vhelp, style = T.caption, textAlign = TextAlign.Center, color = InkMuted)
         }
-        Text("+$xp XP ⭐   +$gems 💎", style = T.number, color = Gold)
+        Text("+$xp XP ⭐   +$gems 💎", style = T.number, color = Gold, textAlign = TextAlign.Center)
+        if (perfect) Text("incl. +20 perfect bonus", style = T.caption, color = InkSoft)
+        if (store.xpBoostActive) Text("⚡ 2× XP boost applied", style = T.caption, color = Violet)
         val (into, need) = xpIntoLevel(store.xp)
+        LinearProgressIndicator(
+            progress = { (into / need.toFloat()).coerceIn(0f, 1f) },
+            Modifier.fillMaxWidth().height(6.dp).clip(Rad.pill),
+            color = Violet
+        )
         Text("Level ${levelForXp(store.xp)} ${levelTitle(levelForXp(store.xp))} • $into/$need XP", style = T.caption, color = InkSoft)
+        LinearProgressIndicator(
+            progress = { (store.todayXp.toFloat() / store.dailyGoalXp.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f) },
+            Modifier.fillMaxWidth().height(6.dp).clip(Rad.pill),
+            color = Cobalt
+        )
+        Text("Daily goal ${store.todayXp}/${store.dailyGoalXp} XP", style = T.caption, color = InkSoft)
+        if (store.hearts <= 1) {
+            Text("❤️ Low hearts — review and chat cost nothing", style = T.caption, color = Coral, textAlign = TextAlign.Center)
+        }
+        val snap = remember(correct) { store.snapshot() }
+        Text(
+            when (snap.nextAction()) {
+                NextAction.REVIEW_DUE -> "Next: review ${snap.dueN} due words"
+                NextAction.FIX_MISTAKES -> "Next: drill your mistake notebook"
+                NextAction.CRUISING -> "Next: take the daily challenge"
+                NextAction.DAILY_GOAL -> "Next: ${snap.goalLeft} XP to your daily goal"
+                NextAction.KEEP_STREAK -> "Next: keep the streak with a chat"
+                NextAction.FIRST_STEPS -> "Next: keep going"
+            },
+            style = T.caption, color = Cobalt, textAlign = TextAlign.Center
+        )
         if (lesson.culture != null) {
             Spacer(Modifier.padding(Sp.sm))
             // §4.4 cultural content photo (not a wallpaper) + aside
             CultureCard(photoForLesson(lesson), lesson.culture!!)
         }
         Spacer(Modifier.padding(Sp.xxl))
+        if (guideFor(lesson.unitId) != null) {
+            BigButton(
+                lang.t("📖 Unit study guide", "📖 Mwongozo wa kitengo", "📖 Unit guide"),
+                onClick = onGuide, color = Violet
+            )
+        }
         BigButton("CONTINUE", onClick = onDone)
     }
 }

@@ -33,6 +33,9 @@ class Store(ctx: Context) {
         if (lastDay >= LocalDate.now().toEpochDay() - 1) sp.getInt("streak", 0) else 0
     )
         private set
+    /** All-time best streak — survives streak breaks so progress is never erased. */
+    var longestStreak by mutableIntStateOf(sp.getInt("longestStreak", 0))
+        private set
     var helpLang by mutableStateOf(
         runCatching { HelpLang.valueOf(sp.getString("lang", "ENGLISH") ?: "ENGLISH") }.getOrDefault(HelpLang.ENGLISH)
     )
@@ -145,6 +148,20 @@ class Store(ctx: Context) {
     }
 
     // counters
+    var bestSpeedCombo by mutableIntStateOf(sp.getInt("bestCombo", 0)); private set
+    var bestSpeedScore by mutableIntStateOf(sp.getInt("bestScore", 0)); private set
+
+    /** Last 5 lesson accuracy ratios — the adaptive-difficulty signal. Plain list:
+     *  every consumer re-reads it after XP/star changes, which always recompose. */
+    private var recentRatios = mutableListOf<Double>().apply {
+        sp.getString("recentRatios", "")?.split(",")?.forEach { s ->
+            s.toDoubleOrNull()?.let { add(it) }
+        }
+    }
+
+    /** Mean recent accuracy, 0.75 when unknown. ≥0.95 sustained = cruising. */
+    fun strain(): Float =
+        if (recentRatios.isEmpty()) 0.75f else recentRatios.average().toFloat()
     var lessonsDone by mutableIntStateOf(sp.getInt("lessonsDone", 0)); private set
     var perfectCount by mutableIntStateOf(sp.getInt("perfect", 0)); private set
     var speakCorrectTotal by mutableIntStateOf(sp.getInt("speakOk", 0)); private set
@@ -219,8 +236,9 @@ class Store(ctx: Context) {
             else -> 1
         }
         lastDay = today
+        if (streak > longestStreak) longestStreak = streak
         sp.edit().putInt("streak", streak).putLong("lastDay", lastDay)
-            .putInt("freezes", streakFreezes).apply()
+            .putInt("freezes", streakFreezes).putInt("longestStreak", longestStreak).apply()
         checkBadges()
     }
 
@@ -333,6 +351,9 @@ class Store(ctx: Context) {
             stars[id] = s
             sp.edit().putInt("stars_$id", s).apply()
         }
+        recentRatios.add(ratio)
+        while (recentRatios.size > 5) recentRatios.removeAt(0)
+        sp.edit().putString("recentRatios", recentRatios.joinToString(",")).apply()
         // quest bonus: completed quests grant extra once per day (simple: +reward when target first reached)
         var bonus = 0
         DAILY_QUESTS.forEach { q ->
@@ -363,6 +384,14 @@ class Store(ctx: Context) {
         val gained = (correct * 2 + bestCombo) * boost
         xp += gained
         todayXp += gained
+        if (bestCombo > bestSpeedCombo) {
+            bestSpeedCombo = bestCombo
+            sp.edit().putInt("bestCombo", bestSpeedCombo).apply()
+        }
+        if (correct > bestSpeedScore) {
+            bestSpeedScore = correct
+            sp.edit().putInt("bestScore", bestSpeedScore).apply()
+        }
         sp.edit().putInt("xp", xp).putInt(dayKey("dxp"), todayXp).apply()
         checkBadges()
         return gained
@@ -454,10 +483,10 @@ class Store(ctx: Context) {
     fun wordsLearnedCount(): Int = srs.count { it.value.box >= 2 }
 
     /** §6.4 level ceiling: the furthest unit with any starred lesson sets the
-     * highest difficulty review may serve (u1–u2 → A1, u3–u4 → A2, u5–u6 → B1). */
+     * highest difficulty review may serve (u1–u2 → A1, u3–u4/u9/u13 → A2, u5–u6 → B1, u7–u8/u10–u12 → B2). */
     fun levelCeiling(): String {
-        val order = listOf("u1", "u2", "u3", "u4", "u5", "u6")
-        val caps = mapOf("u1" to "A1", "u2" to "A1", "u3" to "A2", "u4" to "A2", "u5" to "B1", "u6" to "B1")
+        val order = listOf("u1", "u2", "u3", "u4", "u5", "u6", "u7", "u8", "u9", "u10", "u11", "u12", "u13")
+        val caps = mapOf("u1" to "A1", "u2" to "A1", "u3" to "A2", "u4" to "A2", "u5" to "B1", "u6" to "B1", "u7" to "B2", "u8" to "B2", "u9" to "A2", "u10" to "B2", "u11" to "B2", "u12" to "B2", "u13" to "A2")
         var idx = 0
         order.forEachIndexed { i, u ->
             if (UNITS.find { it.id == u }?.lessonIds?.any { (stars[it] ?: 0) > 0 } == true) idx = maxOf(idx, i)
@@ -465,10 +494,11 @@ class Store(ctx: Context) {
         return caps[order[idx]] ?: "A1"
     }
 
-    /** U6 capstone (§4.1): locked until every U1–U5 lesson has at least 1 star. */
+    /** U6 capstone (§4.1): locked until every U1–U5 lesson has at least 1 star.
+     * U7/U8 stay open and never count toward the gate. */
     fun unitUnlocked(unitId: String): Boolean {
         if (unitId != "u6") return true
-        return UNITS.filter { it.id != "u6" }.flatMap { it.lessonIds }.all { (stars[it] ?: 0) >= 1 }
+        return UNITS.filter { it.id in listOf("u1", "u2", "u3", "u4", "u5") }.flatMap { it.lessonIds }.all { (stars[it] ?: 0) >= 1 }
     }
 
     /** Units where every lesson has at least 1 star. */
@@ -509,6 +539,10 @@ class Store(ctx: Context) {
     fun updateTextScale(v: Float) { textScale = v; sp.edit().putFloat("textScale", v).apply() }
     fun setOnboarded() { onboarded = true; sp.edit().putBoolean("onboarded", true).apply() }
     fun setGoal(v: Int) { dailyGoalXp = v; sp.edit().putInt("goal", v).apply() }
+
+    /** Reading progress: last page opened per novel/story, restored on reopen. */
+    fun saveNovelPage(id: String, page: Int) { sp.edit().putInt("novelpage_$id", page).apply() }
+    fun novelPage(id: String): Int = sp.getInt("novelpage_$id", 0)
     fun setReminder(on: Boolean, hour: Int) { reminderOn = on; reminderHour = hour; sp.edit().putBoolean("remOn", on).putInt("remHour", hour).apply() }
 
     fun saveCustomLessons(list: List<Lesson>) {
@@ -521,12 +555,15 @@ class Store(ctx: Context) {
     fun resetProgress() {
         xp = 0; gems = START_GEMS; hearts = MAX_HEARTS; streak = 0; lastDay = -1L; lessonsDone = 0; perfectCount = 0
         speakCorrectTotal = 0; chatMsgsTotal = 0
+        bestSpeedCombo = 0; bestSpeedScore = 0
+        recentRatios.clear()
         todayXp = 0; todayLessons = 0; todaySpeak = 0; todayChat = 0; todayReview = 0
         stars.clear(); badges.clear(); srs.clear(); mistakes.clear()
         val e = sp.edit()
         allLessons().forEach { e.remove("stars_${it.id}") }
         // Synthetic routes (never in allLessons) must not leak stars across resets.
         e.remove("stars_marathon").remove("stars_review")
+        e.remove("bestCombo").remove("bestScore").remove("recentRatios")
         BADGES.forEach { e.remove("badge_${it.id}") }
         e.remove("mistakes")
         // Progress-only wipe: daily counters, quest flags, Simba records, heart clock.
@@ -537,8 +574,9 @@ class Store(ctx: Context) {
                 k.startsWith("dxp_") || k.startsWith("dls_") || k.startsWith("dsp_") ||
                 k.startsWith("dch_") || k.startsWith("drv_")
         }.forEach { e.remove(it) }
-        e.remove("lastHeartTs").remove("dailyDay")
+        e.remove("lastHeartTs").remove("dailyDay").remove("longestStreak")
         streakFreezes = 0; xpBoostUntil = 0L; activeDaySet.clear()
+        longestStreak = 0
         leagueTierId = "bronze"; leagueWeekStart = -1L; perfectWeeks = 0
         keys.filter { k -> k.startsWith("chest_") }.forEach { e.remove(it) }
         e.remove("activeDays").remove("freezes").remove("boostUntil")

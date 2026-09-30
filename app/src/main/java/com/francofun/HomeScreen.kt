@@ -47,7 +47,11 @@ fun HomeTab(
     onLearn: () -> Unit,
     onPractice: () -> Unit,
     onWords: () -> Unit,
-    onProfile: () -> Unit
+    onProfile: () -> Unit,
+    onNovels: () -> Unit = {},
+    onSongs: () -> Unit = {},
+    onMistakes: () -> Unit = {},
+    onChallenge: () -> Unit = {}
 ) {
     val lang = store.helpLang
     val dueN = allDueCount(store.srs)
@@ -61,6 +65,7 @@ fun HomeTab(
             item { HeaderRow(store, onProfile) }
             item { Greeting(lang) }
             item { ProgressCard(store, into, need) }
+            item { UpNextCard(store, lang, onPractice, onLearn, onChat, onMistakes, onChallenge) }
             item { WordOfDayCard(store) }
             item { StreakCalendarCard(store) }
             item { PowerUpsCard(store) }
@@ -84,6 +89,44 @@ fun HomeTab(
                 Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), modifier = Modifier.fillMaxWidth()) {
                     QuickAction("📚", "Learn path", Cobalt, Modifier.weight(1f)) { onLearn() }
                     QuickAction("💪", "Practice", Violet, Modifier.weight(1f)) { onPractice() }
+                }
+            }
+            item {
+                HeroCard(
+                    color = Emerald, onClick = onNovels,
+                    modifier = Modifier.semantics { contentDescription = "Open novels and stories"; role = Role.Button }
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("📕", fontSize = 36.sp)
+                        Spacer(Modifier.padding(Sp.sm))
+                        Column(Modifier.weight(1f)) {
+                            Text("1000 histoires & romans", style = T.section, color = White)
+                            Text(
+                                "500 courtes (30–200 p.) · 500 longues (300–1000 p.) · Hugo, Verne, Dumas…",
+                                style = T.secondary, color = White.copy(alpha = 0.9f)
+                            )
+                        }
+                        Text("→", style = T.section, color = White)
+                    }
+                }
+            }
+            item {
+                HeroCard(
+                    color = Coral, onClick = onSongs,
+                    modifier = Modifier.semantics { contentDescription = "Open songs to listen"; role = Role.Button }
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("🎵", fontSize = 36.sp)
+                        Spacer(Modifier.padding(Sp.sm))
+                        Column(Modifier.weight(1f)) {
+                            Text("600 chansons à écouter", style = T.section, color = White)
+                            Text(
+                                "Stromae, Piaf, Brel, Brassens… écoute sur YouTube / Spotify",
+                                style = T.secondary, color = White.copy(alpha = 0.9f)
+                            )
+                        }
+                        Text("→", style = T.section, color = White)
+                    }
                 }
             }
             if (dueN > 0) item { ReviewBanner(dueN, onPractice) }
@@ -153,6 +196,140 @@ private fun ProgressCard(store: Store, into: Int, need: Int) {
     }
 }
 
+/**
+ * "What should I practice next?" — single top priority from [LearnerSnapshot].
+ * Names the real offender (due words, worst mistake with its miss count),
+ * stays heart-aware (no hearts → free chat, never a lesson), and speaks
+ * the learner's help language.
+ */
+@Composable
+private fun UpNextCard(
+    store: Store,
+    lang: HelpLang,
+    onPractice: () -> Unit,
+    onLearn: () -> Unit,
+    onChat: () -> Unit,
+    onMistakes: () -> Unit,
+    onChallenge: () -> Unit
+) {
+    val snap = store.snapshot()
+    val emoji: String
+    val title: String
+    val sub: String
+    val color: Color
+    val action: () -> Unit
+    val label: String
+    when (snap.nextAction()) {
+        NextAction.FIRST_STEPS -> {
+            emoji = "👋"
+            title = lang.t("Start your first lesson", "Anza somo lako la kwanza", "Anza lesson yako ya kwanza")
+            sub = lang.t("Two minutes — Simba guides you", "Dakika mbili — Simba anaongoza", "Two minutes — Simba hushow")
+            color = Violet
+            action = onLearn
+            label = "Start your first lesson"
+        }
+        NextAction.REVIEW_DUE -> {
+            emoji = "🔁"
+            title = lang.t(
+                "Review ${snap.dueN} due word${if (snap.dueN == 1) "" else "s"}",
+                "Rudia maneno ${snap.dueN} yaliyoiva",
+                "Review maneno ${snap.dueN} ziko due"
+            )
+            sub = lang.t(
+                "You're about to forget them — catch them now",
+                "Unakaribia kuyasahau — yashike sasa",
+                "Unazeepoteza — zisort sasa"
+            )
+            color = Gold
+            action = onPractice
+            label = "Review due words"
+        }
+        NextAction.FIX_MISTAKES -> {
+            val short = snap.topMistake?.fr?.take(34) ?: ""
+            val misses = snap.topMistake?.count ?: 2
+            emoji = "📒"
+            title = lang.t(
+                "Still stuck on “$short”?",
+                "Bado “$short” inakusumbua?",
+                "Bado “$short” inakupea hard time?"
+            )
+            sub = lang.t(
+                "Missed ${misses}× — let's drill it out",
+                "Umekosea mara $misses — tuifanyie mazoezi",
+                "Umekosea ${misses}× — tuidrill"
+            )
+            color = Coral
+            action = onMistakes
+            label = "Drill your most repeated mistake"
+        }
+        NextAction.CRUISING -> {
+            emoji = "🚀"
+            title = lang.t(
+                "You're cruising — daily challenge?",
+                "Unakimbia vizuri — changamoto ya leo?",
+                "Unacruise — daily challenge?"
+            )
+            sub = lang.t(
+                "95%+ lately — prove it under pressure",
+                "95%+ hivi karibuni — jithibitishe",
+                "95%+ lately — iprove"
+            )
+            color = Pink
+            action = onChallenge
+            label = "Take the daily challenge"
+        }
+        NextAction.DAILY_GOAL -> {
+            if (snap.hearts <= 0) {
+                emoji = "💬"
+                title = lang.t("Out of hearts — chat is free", "Mioyo imeisha — chat ni bure", "Hearts zimeisha — chat ni free")
+                sub = lang.t("Hearts refill soon — keep French moving", "Mioyo inajaa — endelea na Kifaransa", "Hearts zinarefill — songa na French")
+                color = Turquoise
+                action = onChat
+                label = "Chat while hearts refill"
+            } else {
+                emoji = "🎯"
+                title = lang.t(
+                    "${snap.goalLeft} XP to your daily goal",
+                    "XP ${snap.goalLeft} kufikia lengo la leo",
+                    "${snap.goalLeft} XP kufika goal ya leo"
+                )
+                sub = lang.t("One lesson gets you closer", "Somo moja linakusogeza", "Lesson moja inakusogeza")
+                color = Cobalt
+                action = onLearn
+                label = "Continue learning toward your daily goal"
+            }
+        }
+        NextAction.KEEP_STREAK -> {
+            emoji = "💬"
+            title = lang.t("Keep the streak alive", "Linda mfululizo", "Maintain streak")
+            sub = lang.t(
+                if (snap.streak > 1) "${snap.streak}-day streak — a quick chat protects it" else "A quick chat with Simba counts",
+                if (snap.streak > 1) "Mfululizo wa siku ${snap.streak} — chat fupi unaulinda" else "Chat fupi na Simba inatosha",
+                if (snap.streak > 1) "Streak ya siku ${snap.streak} — quick chat inaiprotect" else "Quick chat na Simba inatosha"
+            )
+            color = Turquoise
+            action = onChat
+            label = "Start a conversation with Simba"
+        }
+    }
+    HeroCard(
+        color = color, onClick = action,
+        modifier = Modifier.semantics { contentDescription = label; role = Role.Button }
+    ) {
+        // HeroCard is a Box: multiple children would stack on top of each
+        // other, so everything goes in one Column.
+        Column(verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("🎯 Up next", style = T.label, color = White.copy(alpha = 0.85f))
+                Spacer(Modifier.weight(1f))
+                Text(emoji, fontSize = 28.sp)
+            }
+            Text(title, style = T.section, color = White)
+            Text(sub, style = T.secondary, color = White.copy(alpha = 0.9f))
+        }
+    }
+}
+
 @Composable
 private fun ReviewBanner(dueN: Int, onPractice: () -> Unit) {
     HeroCard(color = Gold, onClick = onPractice) {
@@ -214,6 +391,38 @@ private fun StreakCalendarCard(store: Store) {
                 Text("🔥 ${store.streak}-day streak", style = T.bodySemi, color = Ink, modifier = Modifier.weight(1f))
                 if (store.streakFreezes > 0) {
                     Text("🧊 ×${store.streakFreezes}", style = T.caption, color = Cobalt)
+                }
+            }
+            if (store.longestStreak > 0) {
+                val toRecord = store.longestStreak - store.streak
+                Text(
+                    when {
+                        store.streak == 0 -> "🏆 Previous best: ${store.longestStreak} days — let's start the next one"
+                        toRecord > 0 -> "🏆 $toRecord day${if (toRecord == 1) "" else "s"} to your best (${store.longestStreak})"
+                        else -> "🏆 Personal best — right now!"
+                    },
+                    style = T.caption, color = InkSoft
+                )
+                if (store.streak > 0) {
+                    val nextRound = ((store.streak / 10) + 1) * 10
+                    val toRound = nextRound - store.streak
+                    if (toRound in 1..5) {
+                        Text(
+                            "🎯 $toRound day${if (toRound == 1) "" else "s"} to a $nextRound-day streak!",
+                            style = T.caption, color = Gold
+                        )
+                    }
+                }
+                val activeDays = store.last7DaysActivity().count { it }
+                Text(
+                    "📅 Active $activeDays of the last 7 days",
+                    style = T.caption, color = InkMuted
+                )
+                if (store.streak > 0 && store.streakFreezes == 0) {
+                    Text(
+                        "🧊 A streak freeze saves your streak if you miss a day",
+                        style = T.caption, color = InkMuted
+                    )
                 }
             }
             Spacer(Modifier.padding(Sp.xs))
@@ -430,7 +639,12 @@ private fun ContinueCard(store: Store, lang: HelpLang, onLearn: () -> Unit) {
 /* ═══════════ LEARN TAB — unit path ═══════════ */
 
 @Composable
-fun LearnTab(store: Store, onLesson: (Lesson) -> Unit) {
+fun LearnTab(
+    store: Store,
+    onLesson: (Lesson) -> Unit,
+    onGuide: (String) -> Unit = {},
+    onTextbook: (String) -> Unit = {}
+) {
     val lang = store.helpLang
     AppBackground {
         LazyColumn(
@@ -440,14 +654,20 @@ fun LearnTab(store: Store, onLesson: (Lesson) -> Unit) {
         ) {
             item {
                 Text("Learning path", style = T.screenTitle, color = Ink)
-                Text("6 units · 65 lessons · finish earlier units to unlock", style = T.caption, color = InkSoft)
+                Text("13 units · 128 lessons · finish earlier units to unlock", style = T.caption, color = InkSoft)
                 Spacer(Modifier.padding(Sp.xs))
             }
             UNITS.forEach { u ->
                 val locked = !store.unitUnlocked(u.id)
-                item { UnitHeader(u, locked) }
-                if (locked) item { LockMessage() }
                 val ls = u.lessonIds.mapNotNull { lessonById(it) }
+                val doneN = ls.count { (store.stars[it.id] ?: 0) > 0 }
+                val masteredN = ls.count { (store.stars[it.id] ?: 0) >= 3 }
+                item {
+                    UnitHeader(u, locked, doneN, ls.size, masteredN,
+                        onGuide = { onGuide(u.id) },
+                        onTextbook = textbookForUnit(u.id)?.let { ch -> { onTextbook(ch.id) } })
+                }
+                if (locked) item { LockMessage() }
                 items(ls, key = { it.id }) { l ->
                     LessonCard(l, lang, store.stars[l.id] ?: 0, enabled = !locked) { onLesson(l) }
                 }
@@ -467,13 +687,56 @@ fun LearnTab(store: Store, onLesson: (Lesson) -> Unit) {
 }
 
 @Composable
-private fun UnitHeader(u: StudyUnit, locked: Boolean) {
-    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = Sp.sm)) {
-        Text(if (locked) "🔒" else u.emoji, fontSize = 20.sp)
-        Spacer(Modifier.padding(Sp.sm))
-        Text(u.fr, style = T.section, color = if (locked) InkMuted else Ink)
-        Spacer(Modifier.padding(Sp.xs))
-        Text(u.en, style = T.caption, color = InkSoft)
+private fun UnitHeader(
+    u: StudyUnit,
+    locked: Boolean,
+    doneN: Int,
+    totalN: Int,
+    masteredN: Int,
+    onGuide: () -> Unit = {},
+    onTextbook: (() -> Unit)? = null
+) {
+    Column(modifier = Modifier.padding(top = Sp.sm)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(if (locked) "🔒" else u.emoji, fontSize = 20.sp)
+            Spacer(Modifier.padding(Sp.sm))
+            Text(u.fr, style = T.section, color = if (locked) InkMuted else Ink)
+            Spacer(Modifier.padding(Sp.xs))
+            Text(u.en, style = T.caption, color = InkSoft, modifier = Modifier.weight(1f))
+            if (guideFor(u.id) != null) {
+                Text(
+                    "📖 Guide", style = T.label, color = Cobalt,
+                    modifier = Modifier
+                        .clip(Rad.pill)
+                        .background(CobaltSoft)
+                        .clickable(onClick = onGuide)
+                        .padding(horizontal = Sp.sm, vertical = Sp.xs)
+                        .semantics { contentDescription = "Open study guide for ${u.fr}"; role = Role.Button }
+                )
+            }
+            if (onTextbook != null) {
+                Text(
+                    "📕", style = T.label, color = Violet,
+                    modifier = Modifier
+                        .clip(Rad.pill)
+                        .background(VioletSoft)
+                        .clickable(onClick = onTextbook)
+                        .padding(horizontal = Sp.sm, vertical = Sp.xs)
+                        .semantics { contentDescription = "Open textbook chapter for ${u.fr}"; role = Role.Button }
+                )
+            }
+        }
+        if (!locked && totalN > 0) {
+            LinearProgressIndicator(
+                progress = { (doneN.toFloat() / totalN.toFloat()).coerceIn(0f, 1f) },
+                Modifier.fillMaxWidth().height(6.dp).clip(Rad.pill).padding(top = Sp.xxs),
+                color = Cobalt
+            )
+            Text(
+                "$doneN/$totalN started · $masteredN mastered ★",
+                style = T.caption, color = InkMuted
+            )
+        }
     }
 }
 
@@ -552,10 +815,14 @@ fun PracticeTab(
     onFreeTalk: () -> Unit = {},
     onMistakes: () -> Unit = {},
     onChallenge: () -> Unit = {},
-    onGrammar: () -> Unit = {}
+    onGrammar: () -> Unit = {},
+    onDrills: () -> Unit = {},
+    onTextbook: () -> Unit = {}
 ) {
     val dueN = allDueCount(store.srs)
     val mistakeN = store.mistakes.size
+    val grammarN = remember { buildGrammarLibrary().size }
+    var showMore by remember { mutableStateOf(store.lessonsDone >= 10) }
     AppBackground(tint = VioletSoft) {
         LazyColumn(
             Modifier.fillMaxSize(),
@@ -600,7 +867,11 @@ fun PracticeTab(
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), modifier = Modifier.fillMaxWidth()) {
                     PracticeTile("🎤", "Free Talk", Violet, Modifier.weight(1f), onFreeTalk)
-                    PracticeTile("📒", "Mistakes", Coral, Modifier.weight(1f), onMistakes)
+                    PracticeTile(
+                        "📒",
+                        if (mistakeN > 0) "Mistakes ($mistakeN)" else "Mistakes",
+                        Coral, Modifier.weight(1f), onMistakes
+                    )
                 }
             }
             if (mistakeN > 0) {
@@ -626,24 +897,43 @@ fun PracticeTab(
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), modifier = Modifier.fillMaxWidth()) {
                     PracticeTile("📞", "Voice call", Turquoise, Modifier.weight(1f), onCall)
-                    PracticeTile("⚡", "Speed round", Coral, Modifier.weight(1f), onSpeed)
+                    PracticeTile(
+                        "⚡",
+                        if (store.bestSpeedCombo > 0) "Speed (×${store.bestSpeedCombo} best)" else "Speed round",
+                        Coral, Modifier.weight(1f), onSpeed
+                    )
                 }
             }
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), modifier = Modifier.fillMaxWidth()) {
-                    PracticeTile("✨", "Custom lesson", Violet, Modifier.weight(1f), onCustom)
-                    PracticeTile("🏃", "Marathon", Emerald, Modifier.weight(1f), onMarathon)
-                }
+                OutlinedButton(
+                    if (showMore) "Fewer tools ▴" else "More practice tools ▾",
+                    onClick = { showMore = !showMore },
+                    color = Violet
+                )
             }
-            item {
-                PracticeTile("📐", "Grammar library", Cobalt, Modifier.fillMaxWidth(), onGrammar)
-            }
-            item {
-                PracticeTile("🔗", "12-scenario chain", Gold, Modifier.fillMaxWidth(), onChainChat)
-            }
-            if (store.unitUnlocked("u6")) {
+            if (showMore) {
                 item {
-                    PracticeTile("🌉", "Capstone challenges", Ink, Modifier.fillMaxWidth()) { onMarathon() }
+                    Row(horizontalArrangement = Arrangement.spacedBy(Sp.sm), modifier = Modifier.fillMaxWidth()) {
+                        PracticeTile("✨", "Custom lesson", Violet, Modifier.weight(1f), onCustom)
+                        PracticeTile("🏃", "Marathon", Emerald, Modifier.weight(1f), onMarathon)
+                    }
+                }
+                item {
+                    PracticeTile("📐", "Grammar ($grammarN)", Cobalt, Modifier.fillMaxWidth(), onGrammar)
+                }
+                item {
+                    PracticeTile("⚡", "Drills (${drillScaleCount()}+)", Gold, Modifier.fillMaxWidth(), onDrills)
+                }
+                item {
+                    PracticeTile("📕", "Textbook (${TEXTBOOK.size} chapters)", Violet, Modifier.fillMaxWidth(), onTextbook)
+                }
+                item {
+                    PracticeTile("🔗", "12-scenario chain", Gold, Modifier.fillMaxWidth(), onChainChat)
+                }
+                if (store.unitUnlocked("u6")) {
+                    item {
+                        PracticeTile("🌉", "Capstone challenges", Ink, Modifier.fillMaxWidth()) { onMarathon() }
+                    }
                 }
             }
         }

@@ -83,7 +83,25 @@ class Speaker(private val ctx: Context) : TextToSpeech.OnInitListener {
         }
     }
 
-    fun speak(text: String, slow: Boolean = false, onDone: (() -> Unit)? = null, tag: String = UUID.randomUUID().toString()) {
+    /** Voice emotions: pitch + pace presets so the French voice feels alive. */
+    enum class VoiceEmotion(val rate: Float, val pitch: Float) {
+        NEUTRAL(0.92f, 1.0f),
+        HAPPY(1.0f, 1.25f),
+        EXCITED(1.12f, 1.4f),
+        SINGING(0.98f, 1.15f),
+        STORYTELLER(0.85f, 0.95f),
+        CALM(0.78f, 0.9f),
+        SAD(0.75f, 0.8f),
+        DRAMATIC(0.9f, 0.7f)
+    }
+
+    fun speak(
+        text: String,
+        slow: Boolean = false,
+        onDone: (() -> Unit)? = null,
+        tag: String = UUID.randomUUID().toString(),
+        emotion: VoiceEmotion = VoiceEmotion.NEUTRAL
+    ) {
         // Offline-first sessions (or a failed system engine) prefer bundled Piper (§9.4).
         setSpeaking(true)
         if (preferOffline || systemFailed) {
@@ -112,7 +130,9 @@ class Speaker(private val ctx: Context) : TextToSpeech.OnInitListener {
                 }
             }
         }
-        tts?.setSpeechRate(if (slow) 0.6f else if (nativeRate) 1.0f else 0.9f)
+        val baseRate = if (slow) 0.6f else if (nativeRate) 1.0f else emotion.rate
+        tts?.setSpeechRate(baseRate)
+        tts?.setPitch(emotion.pitch)
         tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, tag)
     }
 

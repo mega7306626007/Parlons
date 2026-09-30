@@ -582,16 +582,23 @@ val UNITS: List<StudyUnit> = listOf(
     StudyUnit("u3", "🌆", "Comme un local", "Talk like a local (A2)", "Kama mwenyeji", listOf("city", "hobbies", "phone", "health", "travel", "opinions", "verbs", "past", "weekend", "cooking", "cinema", "exams", "news", "proverbs")),
     StudyUnit("u4", "🧭", "Se débrouiller", "Getting things done (A2–B1)", "Kujitegemea", listOf("directions", "money", "transport", "emergencies", "housing", "bank", "doctor", "salon", "police", "airport", "hotel")),
     StudyUnit("u5", "💬", "Créer des liens", "Connecting (B1)", "Kuwasiliana", listOf("friends", "daystory", "debate", "slang", "roast", "sorry", "flirt", "interview", "meetup", "wedding", "derby")),
-    StudyUnit("u6", "🌉", "Pont vers la fluidité", "Fluency bridge (B1)", "Daraja", listOf("reviewa2", "bridgeb1", "b1chat", "b1past", "b1debate", "b1future"))
+    StudyUnit("u6", "🌉", "Pont vers la fluidité", "Fluency bridge (B1)", "Daraja", listOf("reviewa2", "bridgeb1", "b1chat", "b1past", "b1debate", "b1future")),
+    StudyUnit("u7", "📐", "Grammaire", "Grammar A1→B2", "Sarufi", listOf("g-articles", "g-adjectifs", "g-etre-avoir", "g-present", "g-negation", "g-questions", "g-possessifs", "g-passe", "g-imparfait", "g-futur", "g-pronoms", "g-relatifs", "g-subjonctif", "g-conditionnel", "g-noms", "g-adverbes", "g-prepositions", "g-conjonctions", "g-interjections")),
+    StudyUnit("u8", "🎓", "Lycée", "High school / KCSE", "Shule ya upili", listOf("k-examen", "k-lettre", "k-redaction", "k-comprehension", "k-oral", "k-pieges", "k-themes", "k-dialogues", "k-dictee", "k-drills", "k-images", "k-revision")),
+    StudyUnit("u9", "🗣️", "Prononciation", "Sounds & rhythm", "Matamshi", listOf("p-nasales", "p-r", "p-uou", "p-liaisons", "p-rythme", "p-sons")),
+    StudyUnit("u10", "🌍", "Afrique francophone", "French that pays", "Afrika ya Kifaransa", listOf("f-rdc", "f-ouest", "f-rwanda", "f-travail", "f-etudes", "f-voyage")),
+    StudyUnit("u11", "🎓", "Maîtrise B2", "B2 mastery grammar", "Umahiri wa B2", listOf("b-verbes", "b-discours", "b-passif", "b-temps", "b-registres", "b-subj2")),
+    StudyUnit("u12", "💬", "Idiomes", "Idioms & proverbs", "Misemo", listOf("i-corps", "i-animaux", "i-bouche", "i-proverbes")),
+    StudyUnit("u13", "🏦", "Banque quotidienne", "Everyday phrase bank", "Benki ya kila siku", listOf("b-market", "b-transport", "b-home", "b-school", "b-church", "b-football", "b-phone", "b-health", "b-food", "b-neighbours"))
 )
 
 fun lessonById(id: String): Lesson? = allLessons().find { it.id == id }
 
 // Custom lessons created by the user (in-memory + persisted separately in Store)
 var customLessonsCache: List<Lesson> = emptyList()
-fun allLessons(): List<Lesson> = LESSONS + EXTRA_LESSONS + EXTRA2_LESSONS + customLessonsCache
+fun allLessons(): List<Lesson> = LESSONS + EXTRA_LESSONS + EXTRA2_LESSONS + EXTRA3_LESSONS + EXTRA4_LESSONS + EXTRA5_LESSONS + EXTRA6_LESSONS + customLessonsCache
 
-val ALL_PHRASES: List<Phrase> = (LESSONS + EXTRA_LESSONS + EXTRA2_LESSONS).flatMap { it.phrases }
+val ALL_PHRASES: List<Phrase> = (LESSONS + EXTRA_LESSONS + EXTRA2_LESSONS + EXTRA3_LESSONS + EXTRA4_LESSONS + EXTRA5_LESSONS + EXTRA6_LESSONS).flatMap { it.phrases }
 
 val VERBS: List<Verb> = listOf(
     Verb("être", "to be", "kuwa", mapOf("je" to "suis", "tu" to "es", "il" to "est", "nous" to "sommes", "vous" to "êtes", "ils" to "sont"), mapOf("je" to "ai été", "tu" to "as été")),

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Centered glyph for the adaptive icon (108dp canvas, 24dp safe padding). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:left="24dp"
+        android:top="24dp"
+        android:right="24dp"
+        android:bottom="24dp"
+        android:drawable="@drawable/ic_launcher" />
+</layer-list>

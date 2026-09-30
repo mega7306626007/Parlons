@@ -26,20 +26,25 @@ object ModelInstaller {
     fun voskDir(ctx: Context): File = File(ctx.filesDir, VOSK_ASSET_DIR)
     fun piperDir(ctx: Context): File = File(ctx.filesDir, PIPER_ASSET_DIR)
 
-    /** True only when both model dirs exist and are non-empty. */
+    /** Each engine stands alone: Vosk (mic) works without Piper (voice) and vice versa. */
+    fun voskBundled(ctx: Context): Boolean =
+        (runCatching { ctx.assets.list(VOSK_ASSET_DIR) }.getOrNull()?.isNotEmpty() == true)
+
+    fun piperBundled(ctx: Context): Boolean =
+        (runCatching { ctx.assets.list(PIPER_ASSET_DIR) }.getOrNull()?.isNotEmpty() == true)
+
+    /** True when every bundled engine is installed (missing engines don't block). */
     fun modelsReady(ctx: Context): Boolean =
-        voskDir(ctx).isReadyDir() && piperDir(ctx).isReadyDir()
+        (!voskBundled(ctx) || voskDir(ctx).isReadyDir()) &&
+            (!piperBundled(ctx) || piperDir(ctx).isReadyDir())
 
     /**
-     * True when the APK actually bundles the model assets (§9.3). The setup
-     * screen is skipped entirely when false — the app then runs on system
-     * voices, and the offline path activates on builds that ship models.
+     * True when the APK bundles at least one model (§9.3). The setup screen is
+     * skipped entirely when false — the app then runs on system voices, and each
+     * offline engine activates on builds that ship its model.
      */
-    fun bundledModelsPresent(ctx: Context): Boolean {
-        val vosk = runCatching { ctx.assets.list(VOSK_ASSET_DIR) }.getOrNull() ?: emptyArray()
-        val piper = runCatching { ctx.assets.list(PIPER_ASSET_DIR) }.getOrNull() ?: emptyArray()
-        return vosk.isNotEmpty() && piper.isNotEmpty()
-    }
+    fun bundledModelsPresent(ctx: Context): Boolean =
+        voskBundled(ctx) || piperBundled(ctx)
 
     private fun File.isReadyDir(): Boolean =
         isDirectory && (listFiles()?.isNotEmpty() == true)
@@ -49,13 +54,20 @@ object ModelInstaller {
     }
 
     suspend fun install(ctx: Context, onProgress: (Progress) -> Unit = {}): Unit = withContext(Dispatchers.IO) {
-        val voskTotal = assetBytes(ctx, VOSK_ASSET_DIR)
-        val total = voskTotal + assetBytes(ctx, PIPER_ASSET_DIR)
+        // Only bundled engines are copied — a missing engine is skipped, never an error.
+        val doVosk = voskBundled(ctx)
+        val doPiper = piperBundled(ctx)
+        val voskTotal = if (doVosk) assetBytes(ctx, VOSK_ASSET_DIR) else 0L
+        val total = voskTotal + if (doPiper) assetBytes(ctx, PIPER_ASSET_DIR) else 0L
         // Phase progress is intra-dir bytes this run; skipped (already-present)
         // files count as done, so snap to the phase total when each dir finishes.
-        copyDir(ctx, VOSK_ASSET_DIR, voskDir(ctx)) { onProgress(Progress(it, total)) }
-        onProgress(Progress(voskTotal, total))
-        copyDir(ctx, PIPER_ASSET_DIR, piperDir(ctx)) { onProgress(Progress(voskTotal + it, total)) }
+        if (doVosk) {
+            copyDir(ctx, VOSK_ASSET_DIR, voskDir(ctx)) { onProgress(Progress(it, total)) }
+            onProgress(Progress(voskTotal, total))
+        }
+        if (doPiper) {
+            copyDir(ctx, PIPER_ASSET_DIR, piperDir(ctx)) { onProgress(Progress(voskTotal + it, total)) }
+        }
         onProgress(Progress(total, total))
     }
 

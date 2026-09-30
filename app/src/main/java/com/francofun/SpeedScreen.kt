@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -51,6 +52,8 @@ fun SpeedScreen(store: Store, speaker: Speaker, onExit: () -> Unit) {
     var left by remember { mutableIntStateOf(60) }
     var over by remember { mutableStateOf(false) }
     var xpGained by remember { mutableIntStateOf(0) }
+    // Personal records entering this round (finishSpeed persists new bests).
+    val prevBest = remember { store.bestSpeedScore to store.bestSpeedCombo }
 
     LaunchedEffect(Unit) {
         while (left > 0 && !over) {
@@ -66,12 +69,29 @@ fun SpeedScreen(store: Store, speaker: Speaker, onExit: () -> Unit) {
     }
 
     if (over) {
+        val newScoreRecord = correct > prevBest.first && correct > 0
+        val newComboRecord = bestCombo > prevBest.second && bestCombo > 0
+        val ctx = LocalContext.current
+        if ((newScoreRecord || newComboRecord) && !animationsOff(ctx)) ConfettiOverlay(true)
         Column(Modifier.fillMaxSize().padding(Sp.xxl), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
             Text("⚡", fontSize = 80.sp)
             Spacer(Modifier.padding(Sp.sm))
             Text("Speed round over!", style = T.screenTitle, color = Blue, textAlign = TextAlign.Center)
             Spacer(Modifier.padding(Sp.xs))
             Text("$correct correct • best combo x$bestCombo", style = T.section, color = Ink)
+            if (idx > 0) Text("${(correct * 100 / idx)}% accuracy", style = T.caption, color = InkSoft)
+            if (newScoreRecord || newComboRecord) {
+                Text(
+                    "🎉 New record!" + when {
+                        newScoreRecord && newComboRecord -> " Best score & combo!"
+                        newScoreRecord -> " Best score!"
+                        else -> " Best combo!"
+                    },
+                    style = T.bodySemi, color = Emerald, textAlign = TextAlign.Center
+                )
+            } else if (prevBest.first > 0) {
+                Text("🏆 Personal best: ${prevBest.first} • x${prevBest.second}", style = T.caption, color = InkSoft)
+            }
             Text("+$xpGained XP ⭐", style = T.number, color = Gold)
             Spacer(Modifier.padding(Sp.xxl))
             BigButton("CONTINUE", onClick = onExit)

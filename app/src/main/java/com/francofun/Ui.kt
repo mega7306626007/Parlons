@@ -24,7 +24,9 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,63 +49,103 @@ import androidx.compose.ui.unit.sp
    NOT Duolingo. NOT corporate. NOT photo-heavy.
    ═══════════════════════════════════════════════ */
 
-/* ── Primary: deep electric cobalt ── */
+/* ── Theme switch: every adaptive color below follows this flag ── */
+object ParlonsDark {
+    var isDark by mutableStateOf(false)
+        internal set
+}
+
+/* ── Primary: deep electric cobalt (brand — same in both themes) ── */
 val Cobalt      = Color(0xFF1E4FE0)
 val CobaltDeep  = Color(0xFF153CB8)
-val CobaltSoft  = Color(0xFFE8EEFF)
+val CobaltSoft: Color
+    get() = if (ParlonsDark.isDark) Color(0xFF1B2650) else Color(0xFFE8EEFF)
 val CobaltDim   = Color(0xFF5B7FE0)
 
-/* ── Secondary: violet / indigo ── */
+/* ── Secondary: violet / indigo (brand — same in both themes) ── */
 val Violet      = Color(0xFF7C3AED)
-val VioletSoft  = Color(0xFFF3E8FF)
+val VioletSoft: Color
+    get() = if (ParlonsDark.isDark) Color(0xFF2A2145) else Color(0xFFF3E8FF)
 
-/* ── Accent: warm gold ── */
+/* ── Accent: warm gold (brand — same in both themes) ── */
 val Gold        = Color(0xFFFFB400)
-val GoldSoft    = Color(0xFFFFF4D6)
+val GoldSoft: Color
+    get() = if (ParlonsDark.isDark) Color(0xFF3A2B08) else Color(0xFFFFF4D6)
 
-/* ── Support colors ── */
+/* ── Support colors (vivid hues stay; soft washes go dark) ── */
 val Coral       = Color(0xFFFF6B5B)
-val CoralSoft   = Color(0xFFFFE5E0)
+val CoralSoft: Color
+    get() = if (ParlonsDark.isDark) Color(0xFF3A1F1B) else Color(0xFFFFE5E0)
 val Turquoise   = Color(0xFF0D9488)
-val TurquoiseSoft = Color(0xFFD6F5F0)
+val TurquoiseSoft: Color
+    get() = if (ParlonsDark.isDark) Color(0xFF0E2E2B) else Color(0xFFD6F5F0)
 val Pink        = Color(0xFFEC4899)
-val PinkSoft    = Color(0xFFFCE7F3)
+val PinkSoft: Color
+    get() = if (ParlonsDark.isDark) Color(0xFF3A1E33) else Color(0xFFFCE7F3)
 val Emerald     = Color(0xFF10B981)
-val EmeraldSoft = Color(0xFFD1FAE5)
+val EmeraldSoft: Color
+    get() = if (ParlonsDark.isDark) Color(0xFF0E2F26) else Color(0xFFD1FAE5)
 
-/* ── Neutrals ── */
-val Ink         = Color(0xFF0F172A)
-val InkSoft     = Color(0xFF475569)
-val InkMuted    = Color(0xFF94A3B8)
+/* ── Neutrals (fully adaptive) ── */
+val Ink: Color
+    get() = if (ParlonsDark.isDark) Color(0xFFE8EAF6) else Color(0xFF0F172A)
+val InkSoft: Color
+    get() = if (ParlonsDark.isDark) Color(0xFFA8AEC8) else Color(0xFF475569)
+val InkMuted: Color
+    get() = if (ParlonsDark.isDark) Color(0xFF7C84A3) else Color(0xFF94A3B8)
 val White       = Color(0xFFFFFFFF)
-val Surface     = Color(0xFFFFFFFF)
-val Cream       = Color(0xFFF8FAFF)
-val Lavender    = Color(0xFFF5F3FF)
-val WarmNeutral = Color(0xFFFFFBF5)
-val Border      = Color(0xFFE2E8F0)
-val BorderStrong = Color(0xFFCBD5E1)
+val Surface: Color
+    get() = if (ParlonsDark.isDark) Color(0xFF151B2E) else Color(0xFFFFFFFF)
+val Cream: Color
+    get() = if (ParlonsDark.isDark) Color(0xFF0B1020) else Color(0xFFF8FAFF)
+val Lavender: Color
+    get() = if (ParlonsDark.isDark) Color(0xFF141A33) else Color(0xFFF5F3FF)
+val WarmNeutral: Color
+    get() = if (ParlonsDark.isDark) Color(0xFF17131F) else Color(0xFFFFFBF5)
+val Border: Color
+    get() = if (ParlonsDark.isDark) Color(0xFF2A3350) else Color(0xFFE2E8F0)
+val BorderStrong: Color
+    get() = if (ParlonsDark.isDark) Color(0xFF3A4568) else Color(0xFFCBD5E1)
 
 /* ── Legacy aliases (keep existing call sites compiling) ── */
-val Blue        = Cobalt
-val BlueLight   = CobaltSoft
-val BlueDim     = CobaltDim
-val Red         = Coral
-val RedLight    = CoralSoft
-val Green       = Emerald
-val GreenLight  = EmeraldSoft
+val Blue
+    get() = Cobalt
+val BlueLight
+    get() = CobaltSoft
+val BlueDim
+    get() = CobaltDim
+val Red
+    get() = Coral
+val RedLight
+    get() = CoralSoft
+val Green
+    get() = Emerald
+val GreenLight
+    get() = EmeraldSoft
 
 /* ── Semantic aliases ── */
-val Primary      = Cobalt
-val Secondary    = Violet
-val Tertiary     = Turquoise
-val OnPrimary    = White
-val OnSurface    = Ink
-val OnSurfaceMuted = InkMuted
-val SurfaceBg    = Cream
-val Error        = Coral
-val Success      = Emerald
-val Warning      = Gold
-val Info         = Cobalt
+val Primary
+    get() = Cobalt
+val Secondary
+    get() = Violet
+val Tertiary
+    get() = Turquoise
+val OnPrimary
+    get() = White
+val OnSurface
+    get() = Ink
+val OnSurfaceMuted
+    get() = InkMuted
+val SurfaceBg
+    get() = Cream
+val Error
+    get() = Coral
+val Success
+    get() = Emerald
+val Warning
+    get() = Gold
+val Info
+    get() = Cobalt
 
 /* ── Functional color roles (§3) ── */
 val ColorLearning   get() = Cobalt      // learning / navigation
@@ -162,6 +204,7 @@ object Rad {
 
 @Composable
 fun ParlonsTheme(dark: Boolean = false, content: @Composable () -> Unit) {
+    ParlonsDark.isDark = dark
     MaterialTheme(colorScheme = if (dark) DarkScheme else LightScheme, content = content)
 }
 

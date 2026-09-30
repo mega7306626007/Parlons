@@ -104,5 +104,10 @@ fun photoForLesson(lesson: Lesson): Int = when {
         "money", "bank", "housing", "doctor", "health", "police", "emergencies"
     ) -> R.drawable.bg_progress
     lesson.unitId == "u5" || lesson.unitId == "u6" -> R.drawable.bg_conversation
+    lesson.unitId == "u7" || lesson.unitId == "u8" -> R.drawable.bg_lesson
+    lesson.unitId == "u9" -> R.drawable.bg_conversation
+    lesson.unitId == "u10" -> R.drawable.bg_lesson
+    lesson.unitId == "u11" || lesson.unitId == "u12" -> R.drawable.bg_lesson
+    lesson.unitId == "u13" -> R.drawable.bg_lesson
     else -> R.drawable.bg_lesson
 }

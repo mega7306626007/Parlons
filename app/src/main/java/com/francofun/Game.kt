@@ -31,7 +31,7 @@ val BADGES: List<Badge> = listOf(
     Badge("perfect5", "💯", "Perfectionniste", "Perfectionist", "Mkamilifu", "5 perfect lessons"),
     Badge("words100", "📖", "100 mots", "100 words learned", "Maneno 100", "Get 100 phrases to mastery box 2+"),
     Badge("unit1", "🏠", "Unité finie", "Finished a unit", "Umomaliza kitengo", "Earn a star in every lesson of one unit"),
-    Badge("allunits", "🌍", "Tout le cours", "Finished all six units", "Umomaliza vyote", "Earn a star in every lesson of all 6 units"),
+    Badge("allunits", "🌍", "Tout le cours", "Finished all thirteen units", "Umomaliza vyote", "Earn a star in every lesson of all 13 units"),
     Badge("speaker", "🎤", "Orateur", "Speaker", "Msemaji", "10 correct SPEAK answers"),
     Badge("speak50", "🎙️", "Grand orateur", "50 spoken sentences", "Sentensi 50", "50 correct SPEAK answers"),
     Badge("chatter", "🦁", "Ami de Simba", "Simba's friend", "Rafiki wa Simba", "Send 25 chat messages"),

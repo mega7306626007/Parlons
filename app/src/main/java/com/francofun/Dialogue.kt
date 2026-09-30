@@ -369,7 +369,108 @@ val SCRIPTS: List<Script> = listOf(
             T("C'est noté. Je te pardonne — on n'en parle plus !", "Noted. I forgive you — let's not speak of it again!", "Sawa. Nimekusamehe — tusizungumzie tena!", "Sawa. Nimekusamehe — tusizungumzie tena!",
                 listOf("merci", "promis"))
         )
-    ))
+    ),
+    Script(Scenario.FUNERAL, listOf(
+        T("Bonjour. Je suis venu présenter mes condoléances à la famille.", "Hello. I've come to offer my condolences to the family.", "Habari. Nimekuja kutoa pole kwa familia.", "Mambo. Nimekuja kutoa pole kwa familia.",
+            listOf("mes condoléances", "je suis désolé", "toutes mes sympathies"), word = "les condoléances = condolences"),
+        T("C'est une grande perte. Il/Elle va beaucoup nous manquer.", "It's a great loss. He/She will be greatly missed.", "Ni hasara kubwa. Atatukumbukwa sana.", "Ni loss kubwa. Atamissika sana.",
+            listOf("oui", "c'est vrai", "paix à son âme")),
+        T("Paix à son âme. Tu connais la famille depuis longtemps ?", "Rest in peace. Have you known the family long?", "Pumzika kwa amani. Unawajua familia kwa muda mrefu?", "Rest in peace. Unawajua familia tangu lini?",
+            listOf("oui", "depuis des années", "c'est mon voisin")),
+        T("La veillée, c'est ce soir ? Je viendrai avec des amis.", "The vigil is tonight? I'll come with friends.", "Keshe ni leo? Nitakuja na marafiki.", "Keshe ni leo? Nitakam na mabeshte.",
+            listOf("oui", "c'est ce soir", "à quelle heure")),
+        T("Je peux aider avec les préparatifs ? La nourriture, les chaises ?", "Can I help with preparations? Food, chairs?", "Naweza kusaidia na maandalizi? Chakula, viti?", "Naweza kusaidia na preparations? Food, viti?",
+            listOf("merci", "oui", "c'est gentil")),
+        T("Merci. En ces moments, être ensemble, c'est tout.", "Thank you. At times like these, being together is everything.", "Asante. Wakati kama huu, kuwa pamoja ndiyo kila kitu.", "Asante. Time kama hii, kuwa pamoja ndiyo kila kitu.",
+            listOf("oui", "courage", "merci"))
+    ),
+        intermediate = listOf(
+            T("J'ai appris la nouvelle hier soir. Je tenais à venir en personne.", "I heard the news last night. I wanted to come in person.", "Nilisikia habari jana usiku. Nilitaka kuja mwenyewe.", "Nilisikia news jana usiku. Nilitaka kukam mwenyewe.",
+                listOf("merci d'être venu", "c'est gentil")),
+            T("Si la famille a besoin de quoi que ce soit, n'hésitez pas.", "If the family needs anything, don't hesitate.", "Kama familia inahitaji chochote, msisite.", "Kama familia inahitaji anything, msisite.",
+                listOf("merci", "on vous préviendra")),
+            T("On dit que les funérailles auront lieu samedi, c'est confirmé ?", "They say the funeral is Saturday, is that confirmed?", "Wanasema mazishi ni Jumamosi, ni kweli?", "Wanasema mazishi ni Sato, ni confirmed?",
+                listOf("oui", "c'est confirmé", "je crois")),
+            T("D'accord. Je passerai avec ma contribution avant vendredi.", "Alright. I'll pass by with my contribution before Friday.", "Sawa. Nitapita na mchango wangu kabla ya Ijumaa.", "Sawa. Nitapita na contribution yangu before Friday.",
+                listOf("merci", "que Dieu vous bénisse"))
+        )
+    ),
+    Script(Scenario.CHURCH, listOf(
+        T("Bonjour ! Bienvenue à l'église. C'est votre première fois ici ?", "Hello! Welcome to church. Is this your first time here?", "Habari! Karibu kanisani. Hii ni mara yako ya kwanza?", "Mambo! Karibu church. Hii ni first time yako?",
+            listOf("oui", "non", "c'est ma première fois"), word = "la messe = the service"),
+        T("Installez-vous près de nous, le service commence bientôt.", "Sit near us, the service starts soon.", "Ketini karibu nasi, ibada inaanza hivi karibuni.", "Ketini karibu nasi, service inaanza soon.",
+            listOf("merci", "avec plaisir")),
+        T("Le sermon d'aujourd'hui parle de la patience. Vous aimez chanter ?", "Today's sermon is about patience. Do you like singing?", "Mahubiri ya leo yanahusu subira. Unapenda kuimba?", "Sermon ya leo ni kuhusu patience. Unapenda kuimba?",
+            listOf("oui", "j'aime chanter", "un peu")),
+        T("Après la messe, on partage le thé. Restez avec nous !", "After mass we share tea. Stay with us!", "Baada ya misa, tunashiriki chai. Baki nasi!", "Baada ya misa, tunashare chai. Baki nasi!",
+            listOf("volontiers", "merci", "avec plaisir")),
+        T("Vous venez de quel quartier ? Moi, j'habite près du marché.", "Which estate are you from? I live near the market.", "Unatoka mtaa gani? Mimi ninaishi karibu na soko.", "Unatoka wapi? Mimi niko karibu na market.",
+            listOf("j'habite à", "je viens de")),
+        T("Ravi de vous connaître ! À dimanche prochain.", "Lovely to meet you! See you next Sunday.", "Nafurahi kukujua! Tutaonana Jumapili ijayo.", "Poa kukujua! Tuonane Sunday ijayo.",
+            listOf("à dimanche", "merci", "au revoir"))
+    ),
+        intermediate = listOf(
+            T("Le pasteur a cité un beau passage aujourd'hui. Ça vous a touché ?", "The pastor quoted a beautiful passage today. Did it move you?", "Mchungaji alinukuu kifungu kizuri leo. Kimekugusa?", "Pastor alinukuu verse poa leo. Imekugusa?",
+                listOf("oui", "beaucoup", "c'était profond")),
+            T("Moi, ce verset me rappelle pourquoi je chante dans la chorale.", "Me, that verse reminds me why I sing in the choir.", "Mimi, mstari huo unanikumbusha kwa nini ninaimba kwaya.", "Mimi, hiyo verse inanikumbusha kwa nini ninaimba choir.",
+                listOf("c'est beau", "vous chantez bien")),
+            T("On organise une collecte pour les veuves samedi. Vous participez ?", "We're organizing a collection for widows Saturday. Will you join?", "Tunaandaa mchango kwa wajane Jumamosi. Utashiriki?", "Tunaandaa collection kwa wajane Sato. Utakam?",
+                listOf("oui", "volontiers", "je vais essayer")),
+            T("Parfait. Que Dieu vous bénisse, et à dimanche !", "Perfect. God bless you, see you Sunday!", "Vizuri. Mungu akubariki, na Jumapili!", "Poa. God bless you, na Sunday!",
+                listOf("amen", "merci", "à dimanche"))
+        )
+    ),
+    Script(Scenario.RURACIO, listOf(
+        T("Karibuni ! Entrez, asseyez-vous. Vous avez fait bon voyage ?", "Welcome! Come in, sit down. Did you have a good trip?", "Karibuni! Ingieni, ketini. Mlisafiri vizuri?", "Karibuni! Ingieni, ketini. Mlisafiri poa?",
+            listOf("oui", "merci", "très bon voyage"), word = "la dot = dowry/bride price"),
+        T("Nous venons pour parler de nos enfants. Notre fils aime votre fille.", "We've come to talk about our children. Our son loves your daughter.", "Tumekuja kuzungumza kuhusu watoto wetu. Mwana wetu anampenda binti yenu.", "Tumekuja kuongea kuhusu watoto wetu. Mwana wetu anampenda binti yenu.",
+            listOf("nous écoutons", "parlez", "bienvenue")),
+        T("D'abord, mangeons et buvons. On ne négocie jamais le ventre vide !", "First, let's eat and drink. Never negotiate on an empty stomach!", "Kwanza, tule na tunywe. Hatujadiliani tumbo ikiwa tupu!", "Kwanza, tule na tunywe. Hatunegotiate na njaa!",
+            listOf("volontiers", "merci", "avec plaisir")),
+        T("Parlons de la dot. Quelle est votre proposition, les anciens ?", "Let's talk dowry. What's your proposal, elders?", "Tuzungumze kuhusu mahari. Pendekezo lenu ni lipi, wazee?", "Tuongee kuhusu mahari. Offer yenu ni gani, wazee?",
+            listOf("nous proposons", "combien", "on discute")),
+        T("C'est beaucoup, mais l'amour n'a pas de prix. On se retrouve au milieu ?", "That's a lot, but love is priceless. Shall we meet halfway?", "Ni nyingi, lakini mapenzi hayana bei. Tukutane katikati?", "Ni mob, lakini love haina bei. Tukutane katikati?",
+            listOf("d'accord", "marché conclu", "on accepte")),
+        T("Marché conclu ! Que les deux familles soient bénies.", "Deal! Blessings on both families.", "Makubaliano yamekamilika! Familia zote zibarikiwe.", "Deal done! Familia zote zibarikiwe.",
+            listOf("amen", "merci", "félicitations"))
+    ),
+        intermediate = listOf(
+            T("Avant de commencer, présentons nos familles respectives.", "Before starting, let's introduce our respective families.", "Kabla hatujaanza, tutambulishane familia zetu.", "Before tuanze, tutambulishane familia zetu.",
+                listOf("je vous présente", "voici mon oncle")),
+            T("Notre fils a fini ses études et travaille à Nairobi. Il est prêt.", "Our son finished his studies and works in Nairobi. He's ready.", "Mwana wetu amemaliza masomo na anafanya kazi Nairobi. Yuko tayari.", "Mwana wetu amemaliza shule na anafanya job Nairobi. Yuko ready.",
+                listOf("c'est bien", "félicitations")),
+            T("Nous proposons vingt chèvres et une somme symbolique.", "We propose twenty goats and a symbolic sum.", "Tunapendekeza mbuzi ishirini na kiwango cha ishara.", "Tunapendekeza mbuzi ishirini na kiasi symbolic.",
+                listOf("on accepte", "c'est raisonnable", "on réfléchit")),
+            T("Alors, fixons la date de la cérémonie. Décembre vous convient ?", "So, let's fix the ceremony date. Does December suit you?", "Basi, tupange tarehe ya sherehe. Desemba inawafaa?", "Basi, tuweke date ya ceremony. December inawafaa?",
+                listOf("d'accord", "décembre c'est parfait"))
+        )
+    ),
+    Script(Scenario.CHAMA, listOf(
+        T("Bonsoir à tous ! La réunion de la chama commence. Qui a les nouvelles ?", "Good evening all! The chama meeting starts. Who has news?", "Habari za jioni wote! Mkutano wa chama unaanza. Nani ana habari?", "Mambo wote! Meeting ya chama inaanza. Nani ako na news?",
+            listOf("bonsoir", "présent", "on commence"), word = "la tontine = savings group"),
+        T("D'abord, les contributions du mois. Qui n'a pas encore payé ?", "First, this month's contributions. Who hasn't paid yet?", "Kwanza, michango ya mwezi. Nani hajalipa bado?", "Kwanza, contributions za mwezi. Nani hajalipa bado?",
+            listOf("j'ai payé", "je paie maintenant", "demain")),
+        T("Notons tout dans le cahier. La transparence, c'est la confiance.", "Let's write everything in the book. Transparency is trust.", "Tuandike kila kitu kwenye daftari. Uwazi ni uaminifu.", "Tuandike kila kitu kwa book. Transparency ni trust.",
+            listOf("d'accord", "c'est vrai", "bien dit")),
+        T("Qui demande un prêt ce mois-ci ? Expliquez votre projet.", "Who requests a loan this month? Explain your project.", "Nani anaomba mkopo mwezi huu? Eleza mradi wako.", "Nani anaomba loan hii month? Eleza project yako.",
+            listOf("moi", "je veux", "mon projet c'est")),
+        T("On vote : qui est pour accorder ce prêt ?", "Let's vote: who's for granting this loan?", "Tupige kura: nani anaunga mkono mkopo huu?", "Tuvote: nani ako for hii loan?",
+            listOf("moi", "pour", "d'accord")),
+        T("C'est décidé ! Prochaine réunion le premier samedi. Merci à tous.", "Decided! Next meeting first Saturday. Thanks all.", "Imeamuliwa! Mkutano ujao Jumamosi ya kwanza. Asanteni wote.", "Imeamuliwa! Next meeting Sato ya kwanza. Asanteni wote.",
+            listOf("merci", "à la prochaine", "d'accord"))
+    ),
+        intermediate = listOf(
+            T("Le bilan du trimestre : nos cotisations ont augmenté de vingt pour cent.", "Quarterly report: our contributions grew twenty percent.", "Ripoti ya robo: michango yetu imeongezeka asilimia ishirini.", "Report ya quarter: contributions zetu zimepanda twenty percent.",
+                listOf("bravo", "excellent", "on continue")),
+            T("Deux membres ont du retard. Comment les aider sans les punir ?", "Two members are late. How to help without punishing?", "Wanachama wawili wamechelewa. Tuwasaidieje bila kuwaadhibu?", "Members wawili wamechelewa. Tuwasaidieje bila punishment?",
+                listOf("on les appelle", "un délai", "on comprend")),
+            T("Je propose d'investir une partie dans un petit commerce.", "I propose investing part in a small business.", "Napendekeza kuwekeza sehemu kwenye biashara ndogo.", "Napendekeza kuinvest sehemu kwa biashara ndogo.",
+                listOf("bonne idée", "quel commerce", "on vote")),
+            T("On en discute le mois prochain avec les chiffres. Bonne soirée !", "We'll discuss it next month with figures. Good evening!", "Tutajadili mwezi ujao na takwimu. Usiku mwema!", "Tutadiscuss next month na figures. Good evening!",
+                listOf("d'accord", "bonne soirée", "merci"))
+        )
+    )
+)
 
 fun scriptFor(s: Scenario): Script = SCRIPTS.first { it.scenario == s }
 

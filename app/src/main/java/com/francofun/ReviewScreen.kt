@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -63,10 +64,11 @@ fun ReviewScreen(store: Store, speaker: Speaker, onExit: () -> Unit) {
     var revealed by remember { mutableStateOf(false) }
     var totalXp by remember { mutableIntStateOf(0) }
     var againCount by remember { mutableIntStateOf(0) }
+    val againKeys = remember { mutableStateListOf<String>() }
     var finished by remember { mutableStateOf(false) }
 
     if (finished) {
-        ReviewDone(store, phrases.size, totalXp, againCount, onExit)
+        ReviewDone(store, phrases, totalXp, againCount, againKeys.toList(), onExit)
         return
     }
 
@@ -77,7 +79,10 @@ fun ReviewScreen(store: Store, speaker: Speaker, onExit: () -> Unit) {
     val currentDueDays = (item.dueEpochDay - LocalDate.now().toEpochDay()).toInt()
 
     fun rate(key: String, rating: ReviewRating) {
-        if (rating == ReviewRating.AGAIN) againCount++
+        if (rating == ReviewRating.AGAIN) {
+            againCount++
+            againKeys.add(key)
+        }
         totalXp += store.recordReview(key, rating)
         if (last) finished = true
         else {
@@ -306,9 +311,13 @@ private fun ReviewEmpty(onExit: () -> Unit) {
 }
 
 @Composable
-private fun ReviewDone(store: Store, count: Int, xp: Int, again: Int, onDone: () -> Unit) {
+private fun ReviewDone(store: Store, phrases: List<Phrase>, xp: Int, again: Int, againKeys: List<String>, onDone: () -> Unit) {
     val ctx = LocalContext.current
-    if (!animationsOff(ctx)) ConfettiOverlay(true)
+    val kept = (phrases.size - again).coerceAtLeast(0)
+    val retention = if (phrases.isNotEmpty()) (kept * 100 / phrases.size) else 100
+    if (retention >= 80 && !animationsOff(ctx)) ConfettiOverlay(true)
+    val strengthened = phrases.count { (store.srs[it.key()]?.box ?: 0) >= 2 }
+    val snap = remember { store.snapshot() }
     Column(
         Modifier.fillMaxSize().padding(Sp.xxl),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -318,7 +327,12 @@ private fun ReviewDone(store: Store, count: Int, xp: Int, again: Int, onDone: ()
         Spacer(Modifier.padding(Sp.sm))
         Text("Review complete!", style = T.screenTitle, color = Emerald, textAlign = TextAlign.Center)
         Spacer(Modifier.padding(Sp.xs))
-        Text("$count phrases reviewed", style = T.section, color = Ink)
+        Text("${phrases.size} phrases reviewed", style = T.section, color = Ink)
+        Text(
+            "$retention% kept in memory",
+            style = T.bodySemi, color = if (retention >= 80) Emerald else Gold,
+            textAlign = TextAlign.Center
+        )
         if (again > 0) {
             Text(
                 "$again need another look soon — they'll come back today",
@@ -326,13 +340,28 @@ private fun ReviewDone(store: Store, count: Int, xp: Int, again: Int, onDone: ()
                 color = InkSoft,
                 textAlign = TextAlign.Center
             )
+            againKeys.mapNotNull { k -> phrases.find { it.key() == k }?.fr }.take(3).forEach { fr ->
+                Text("• $fr", style = T.caption, color = InkMuted, textAlign = TextAlign.Center)
+            }
         }
+        Text("💪 $strengthened at mastery box 2+", style = T.caption, color = Emerald)
         Spacer(Modifier.padding(Sp.sm))
         Text("+$xp XP ⭐", style = T.number, color = Gold)
         Text(
             "Streak 🔥 ${store.streak} · Words 📖 ${store.wordsLearnedCount()}",
             style = T.caption,
             color = InkSoft
+        )
+        Text(
+            when (snap.nextAction()) {
+                NextAction.REVIEW_DUE -> "Next: review ${snap.dueN} more due words"
+                NextAction.FIX_MISTAKES -> "Next: drill your mistake notebook"
+                NextAction.CRUISING -> "Next: take the daily challenge"
+                NextAction.DAILY_GOAL -> "Next: ${snap.goalLeft} XP to your daily goal"
+                NextAction.KEEP_STREAK -> "Next: keep the streak with a chat"
+                NextAction.FIRST_STEPS -> "Next: start a lesson"
+            },
+            style = T.caption, color = Cobalt, textAlign = TextAlign.Center
         )
         Spacer(Modifier.padding(Sp.xxl))
         BigButton("CONTINUE", onClick = onDone, color = Emerald)

@@ -35,8 +35,12 @@ fun WordBankScreen(store: Store, speaker: Speaker, onBack: () -> Unit) {
     val lang = store.helpLang
     var query by remember { mutableStateOf("") }
     var level by remember { mutableStateOf("All") }
+    var weakFirst by remember { mutableStateOf(true) }
+    var dueOnly by remember { mutableStateOf(false) }
+    var masteredOnly by remember { mutableStateOf(false) }
+    val today = remember { java.time.LocalDate.now().toEpochDay() }
     val lessons = remember { allLessons() }
-    val rows = remember(query, level, store.srs.size) {
+    val rows = remember(query, level, weakFirst, dueOnly, masteredOnly, store.srs.size) {
         ALL_PHRASES
             .filter { (level == "All" || it.level == level) &&
                 (query.isBlank() || it.fr.contains(query, true) || it.meaning(lang).contains(query, true)) }
@@ -44,7 +48,12 @@ fun WordBankScreen(store: Store, speaker: Speaker, onBack: () -> Unit) {
                 Triple(p, store.srs[p.key()]?.box ?: 0,
                     lessons.find { l -> l.phrases.any { it.fr == p.fr } }?.fr ?: "")
             }
-            .sortedWith(compareBy({ it.second }, { it.first.fr }))
+            .filter { (p, box, _) ->
+                if (masteredOnly) box >= 2
+                else if (!dueOnly) true
+                else box > 0 && (store.srs[p.key()]?.dueEpochDay ?: Long.MAX_VALUE) <= today
+            }
+            .sortedWith(if (weakFirst) compareBy({ it.second }, { it.first.fr }) else compareBy({ it.first.fr }))
     }
     AppBackground(tint = TurquoiseSoft) {
     Column(Modifier.fillMaxSize().padding(Sp.xxl), verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
@@ -59,6 +68,12 @@ fun WordBankScreen(store: Store, speaker: Speaker, onBack: () -> Unit) {
         Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs)) {
             listOf("All", "A1", "A2", "B1").forEach { lv -> Chip(lv, level == lv) { level = lv } }
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(Sp.xs)) {
+            Chip("Weak first", weakFirst, label = "Sort weakest first") { weakFirst = true }
+            Chip("A–Z", !weakFirst, label = "Sort alphabetically") { weakFirst = false }
+            Chip("🔁 Due now", dueOnly, label = "Show only words due for review") { dueOnly = !dueOnly }
+            Chip("★ Mastered", masteredOnly, label = "Show only mastered words") { masteredOnly = !masteredOnly }
+        }
         Text("${store.wordsLearnedCount()} words at mastery box 2+ • tap 🔊 to hear", style = T.caption)
         LazyColumn(Modifier.weight(1f).fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Sp.xs)) {
             items(rows, key = { it.first.fr }) { (p, box, lesson) ->
@@ -72,10 +87,34 @@ fun WordBankScreen(store: Store, speaker: Speaker, onBack: () -> Unit) {
                         Text(p.meaning(lang), style = T.secondary, color = InkSoft)
                         if (lesson.isNotBlank()) Text("📚 $lesson • ${p.level}", style = T.caption)
                     }
-                    Text(
-                        if (box == 0) "○ new" else "●".repeat(box) + "○".repeat(5 - box),
-                        style = T.caption, color = if (box == 0) InkMuted else Gold
-                    )
+                    val due = (store.srs[p.key()]?.dueEpochDay ?: Long.MAX_VALUE) <= today
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            if (box == 0) "○ new" else "●".repeat(box) + "○".repeat(5 - box),
+                            style = T.caption, color = if (box == 0) InkMuted else Gold,
+                            modifier = Modifier.semantics {
+                                contentDescription = when (box) {
+                                    0 -> "${p.fr}, new word"
+                                    1 -> "${p.fr}, learning"
+                                    2 -> "${p.fr}, familiar"
+                                    3 -> "${p.fr}, strong"
+                                    else -> "${p.fr}, mastered"
+                                }
+                            }
+                        )
+                        if (box > 0) {
+                            Text(
+                                when (box) {
+                                    1 -> "learning"
+                                    2 -> "familiar"
+                                    3 -> "strong"
+                                    else -> "mastered"
+                                },
+                                style = T.caption, color = InkMuted
+                            )
+                        }
+                        if (due && box > 0) Text("🔁 due", style = T.caption, color = Coral)
+                    }
                 }
             }
         }

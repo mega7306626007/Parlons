@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -69,7 +70,7 @@ fun OnboardingScreen(store: Store, onDone: () -> Unit) {
                 Text("How Parlons works", style = T.screenTitle, color = Ink, textAlign = androidx.compose.ui.text.style.TextAlign.Center)
                 Spacer(Modifier.padding(Sp.sm))
                 Column(verticalArrangement = Arrangement.spacedBy(Sp.sm), horizontalAlignment = Alignment.Start, modifier = Modifier.fillMaxWidth()) {
-                    OnboardTip("📚", "Learn path", "6 units · 65 lessons, unlock as you go")
+                    OnboardTip("📚", "Learn path", "13 units · 128 lessons, unlock as you go")
                     OnboardTip("🔁", "Smart review", "Spaced repetition keeps words fresh")
                     OnboardTip("🦁", "Chat with Simba", "Offline French conversation practice")
                     OnboardTip("⚡", "Power-ups", "Streak freezes, 2× XP, daily chests")
@@ -106,7 +107,7 @@ private fun OnboardTip(icon: String, title: String, sub: String) {
 }
 
 @Composable
-fun StatsScreen(store: Store, onBack: () -> Unit) {
+fun StatsScreen(store: Store, onBack: () -> Unit, onAct: (NextAction) -> Unit = {}) {
     val week = store.weeklyXp()
     val max = (week.maxOrNull() ?: 1).coerceAtLeast(1)
     // §46: dense statistics stay photo-free for maximum clarity.
@@ -136,6 +137,9 @@ fun StatsScreen(store: Store, onBack: () -> Unit) {
             Text("This week: $weekSum XP • ${store.streak}-day streak • ${store.lessonsDone} lessons done • ${store.wordsLearnedCount()} words learned", style = T.secondary, color = InkSoft)
             Text(pace, style = T.label, color = Blue)
         }
+
+        // Focus next: weak spot + skill snapshot + one-tap action, all live.
+        FocusNextCard(store, onAct)
 
         // Local league board (offline rivals paced from your average)
         LeagueCard(store, weekSum, week.average())
@@ -170,6 +174,56 @@ fun StatsScreen(store: Store, onBack: () -> Unit) {
 }
 
 @Composable
+private fun FocusNextCard(store: Store, onAct: (NextAction) -> Unit) {
+    val snap = remember(store.srs.size, store.mistakes.size, store.todayXp) { store.snapshot() }
+    val action = snap.nextAction()
+    val weak = when {
+        snap.topMistake != null && snap.topMistake.count >= 2 ->
+            "Weak spot: “${snap.topMistake.fr.take(36)}” (${snap.topMistake.count}× misses)"
+        snap.dueN > 0 -> "${snap.dueN} words fading from memory"
+        else -> "No weak spots right now — sharp!"
+    }
+    val (btnText, btnColor) = when (action) {
+        NextAction.FIRST_STEPS -> "Start learning" to Cobalt
+        NextAction.REVIEW_DUE -> "Review ${snap.dueN} now" to Gold
+        NextAction.FIX_MISTAKES -> "Drill notebook" to Coral
+        NextAction.CRUISING -> "Challenge" to Pink
+        NextAction.DAILY_GOAL -> "Keep earning" to Cobalt
+        NextAction.KEEP_STREAK -> "Chat now" to Turquoise
+    }
+    Card {
+        Column(verticalArrangement = Arrangement.spacedBy(Sp.sm)) {
+            Text("🎯 Focus next", style = T.label, color = Cobalt)
+            val weakAct: (() -> Unit)? = when {
+                snap.topMistake != null && snap.topMistake.count >= 2 -> ({ onAct(NextAction.FIX_MISTAKES) })
+                snap.dueN > 0 -> ({ onAct(NextAction.REVIEW_DUE) })
+                else -> null
+            }
+            Text(
+                weak, style = T.bodySemi, color = Ink,
+                modifier = if (weakAct != null) Modifier
+                    .clip(Rad.md)
+                    .clickable(onClick = weakAct)
+                    .semantics { contentDescription = "$weak — tap to practice"; role = Role.Button }
+                else Modifier
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
+                StatBox("📖", "${store.wordsLearnedCount()}", "mastered")
+                StatBox("✅", "${store.perfectCount}", "perfect")
+                StatBox("💬", "${store.chatMsgsTotal}", "chats")
+            }
+            LinearProgressIndicator(
+                progress = { (store.todayXp.toFloat() / store.dailyGoalXp.coerceAtLeast(1).toFloat()).coerceIn(0f, 1f) },
+                modifier = Modifier.fillMaxWidth().height(8.dp).clip(Rad.pill),
+                color = btnColor
+            )
+            Text("Today ${store.todayXp}/${store.dailyGoalXp} XP", style = T.caption, color = InkMuted)
+            OutlinedButton(btnText, onClick = { onAct(action) }, color = btnColor)
+        }
+    }
+}
+
+@Composable
 private fun StatBox(emoji: String, value: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(emoji, fontSize = 22.sp)
@@ -178,13 +232,12 @@ private fun StatBox(emoji: String, value: String, label: String) {
     }
 }
 
-/* ── Local league (offline rivals) ── */
+/* ── Solo league (you vs your own goals — no fake rivals) ── */
 
 @Composable
 private fun LeagueCard(store: Store, weekXp: Int, avg: Double) {
     val tier = LEAGUES.find { it.id == store.leagueTierId } ?: LEAGUES.first()
-    val board = remember(weekXp, avg, store.leagueTierId) { buildLeagueBoard(weekXp, avg) }
-    val yourRank = board.indexOfFirst { it.isYou } + 1
+    val progress = (weekXp / tier.promoteXp.toFloat()).coerceIn(0f, 1f)
 
     Column(
         Modifier
@@ -192,41 +245,31 @@ private fun LeagueCard(store: Store, weekXp: Int, avg: Double) {
             .clip(Rad.xl)
             .background(VioletSoft)
             .border(1.dp, Color(0xFFE9D5FF), Rad.xl)
-            .padding(Sp.md),
+            .padding(Sp.md)
+            .semantics { contentDescription = "${tier.name} league, $weekXp XP this week" },
         verticalArrangement = Arrangement.spacedBy(Sp.xs)
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text("${tier.emoji} ${tier.name} League", style = T.bodySemi, color = Violet, modifier = Modifier.weight(1f))
-            Text("#$yourRank this week", style = T.label, color = Ink)
+            Text("$weekXp XP", style = T.label, color = Ink)
         }
+        LinearProgressIndicator(
+            progress = { progress },
+            modifier = Modifier.fillMaxWidth().height(8.dp).clip(Rad.pill),
+            color = Violet
+        )
         Text(
             if (weekXp >= tier.promoteXp) "🟢 Promotion zone — keep it up!"
-            else if (weekXp < tier.demoteXp && tier.demoteXp > 0) "🔴 Relegation zone — one lesson pulls you up"
-            else "⚪ Safe · promote at ${tier.promoteXp} XP",
+            else if (weekXp < tier.demoteXp && tier.demoteXp > 0) "🔴 Below your bar — one lesson pulls you up"
+            else "⚪ ${tier.promoteXp - weekXp} XP to promotion",
             style = T.caption, color = InkSoft
+        )
+        Text(
+            "Your pace: ~${avg.toInt()} XP/day · just you in here — real rivals arrive with multiplayer",
+            style = T.caption, color = InkMuted
         )
         if (store.perfectWeeks > 0) {
             Text("✨ ${store.perfectWeeks} perfect week${if (store.perfectWeeks == 1) "" else "s"}", style = T.caption, color = Gold)
-        }
-        board.forEachIndexed { i, r ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(Rad.sm)
-                    .background(if (r.isYou) GoldSoft else Color.Transparent)
-                    .padding(horizontal = Sp.xs, vertical = 2.dp)
-            ) {
-                Text("${i + 1}", style = T.caption, color = InkMuted, modifier = Modifier.padding(end = Sp.sm))
-                Text(r.emoji, fontSize = 14.sp, modifier = Modifier.padding(end = Sp.xs))
-                Text(
-                    r.name,
-                    style = if (r.isYou) T.label else T.secondary,
-                    color = if (r.isYou) Ink else InkSoft,
-                    modifier = Modifier.weight(1f)
-                )
-                Text("${r.weeklyXp} XP", style = T.caption, color = if (r.isYou) Violet else InkMuted)
-            }
         }
     }
 }

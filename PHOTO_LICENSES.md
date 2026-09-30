@@ -24,6 +24,7 @@ All background photos in this project are downloaded from **Pexels** under the [
 | bg_food.webp | Food lessons | 1640772 | https://www.pexels.com/photo/1640772/ |
 | bg_city_ctx.webp | City lessons | 378570 | https://www.pexels.com/photo/378570/ |
 | bg_travel.webp | Travel lessons | 346885 | https://www.pexels.com/photo/346885/ |
+| simba_lion.jpg | Simba mascot | 13248515 | https://www.pexels.com/photo/portrait-of-lion-13248515/ |
 
 Downloaded via direct Pexels image URLs (not bulk-scraped). Selected for portrait mobile composition, negative space for UI overlays, no prominent logos/trademarks, natural environments. Converted to WebP (q78, max width 1080) for APK size.
 

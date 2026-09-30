@@ -75,7 +75,11 @@ enum class Scenario(val emoji: String, val label: String, val brief: String) {
     RENT("🏠", "Logement", "Rent a room, negotiate price"),
     BARBER("💈", "Coiffeur", "Small talk + describe your haircut"),
     DERBY("⚽", "Débat foot", "Friendly football disagreement"),
-    SORRY("🙏", "Pardon", "Apologize like you mean it")
+    SORRY("🙏", "Pardon", "Apologize like you mean it"),
+    FUNERAL("🕊️", "Condoléances", "Offer sympathy after a loss"),
+    CHURCH("⛪", "Messe", "Sunday service small talk"),
+    RURACIO("💍", "Ruracio", "Dowry visit & negotiations"),
+    CHAMA("🤝", "Chama", "Savings group meeting")
 }
 
 /** Everything runs on-device from the scripted dialogue in Dialogue.kt — no key, no internet. */
