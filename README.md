@@ -1,6 +1,14 @@
-# Parlons 🇫🇷
+# Parlons
 
-> **French for Kenyans — English × Kiswahili × Sheng**
+<p align="center">
+  <img src="https://img.shields.io/badge/Kotlin-7F52FF?style=for-the-badge&logo=kotlin&logoColor=white" />
+  <img src="https://img.shields.io/badge/Android-3DDC84?style=for-the-badge&logo=android&logoColor=white" />
+  <img src="https://img.shields.io/badge/Offline--First-238636?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/65_Lessons-860_Phrases-8957e5?style=for-the-badge" />
+  <img src="https://img.shields.io/badge/Status-Active_Development-ff5e6c?style=for-the-badge" />
+</p>
+
+> **French for Kenyans — English x Kiswahili x Sheng. Zero accounts. Zero servers. Zero keys.**
 
 Parlons is an offline-first Android French-learning application designed around short lessons, interactive exercises and a distinctly Kenyan learning experience.
 
@@ -23,7 +31,7 @@ The app is designed to work without an account, server, subscription or mandator
 - Weekly recap
 - Custom lessons
 
-### Simba 🦁
+### Simba
 
 Simba is the conversational learning character:
 
@@ -78,7 +86,7 @@ The voice path remains optional; the core learning experience does not depend on
 
 ## Project status
 
-🚧 **Active development**
+**Active development**
 
 The project combines language learning, offline mobile engineering, gamification and conversational interaction into one Android application.
 
@@ -87,4 +95,3 @@ The project combines language learning, offline mobile engineering, gamification
 Parlons explores a simple question:
 
 > How much of a useful language-learning experience can be built locally, without requiring a cloud backend?
-
